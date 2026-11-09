@@ -1,0 +1,19 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: dota2-tracker
+  datasource:
+    url: jdbc:mysql://localhost:3306/dota2_tracker?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true # 自动开启下划线转驼峰 (如 account_id -> accountId)
+
+opendota:
+  base-url: https://api.opendota.com/api
+  api-key: # 留空使用免费公用配额，若有则填入
