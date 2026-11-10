@@ -11,6 +11,7 @@
   "dependencies": {
     "ant-design-vue": "^4.2.6",
     "axios": "^1.21.0",
+    "dotaconstants": "^10.8.0",
     "vue": "^3.5.44"
   },
   "devDependencies": {

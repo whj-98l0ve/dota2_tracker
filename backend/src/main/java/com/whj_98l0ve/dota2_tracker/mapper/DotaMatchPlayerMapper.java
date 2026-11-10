@@ -13,9 +13,6 @@ import java.util.Map;
 @Mapper
 public interface DotaMatchPlayerMapper extends BaseMapper<DotaMatchPlayer> {
 
-    /**
-     * 解决唯一索引 uk_match_account 冲突问题：存在则更新，不存在则插入
-     */
     @Insert("""
         INSERT INTO dota_match_player (
             match_id, account_id, personaname, player_slot, is_radiant, win, 
@@ -54,7 +51,7 @@ public interface DotaMatchPlayerMapper extends BaseMapper<DotaMatchPlayer> {
     """)
     int upsert(@Param("p") DotaMatchPlayer p);
 
-    // 队友合拍红黑榜 SQL 自连接查询
+    // 队友合拍红黑榜 SQL
     @Select("""
         SELECT 
             b.account_id AS teammateId,
@@ -73,6 +70,50 @@ public interface DotaMatchPlayerMapper extends BaseMapper<DotaMatchPlayer> {
         HAVING matchesTogether >= 2
         ORDER BY winRate DESC, matchesTogether DESC
     """)
+    List<Map<String, Object>> selectTeammateSynergy(@Param("accountId") Long accountId);
 
-    List<Map<String, Object>> selectTeammateSynergy( Long accountId);
+    // 统计各分路位置 (Pos 1 ~ Pos 5) 场次、占比、线优率与胜率
+    @Select("""
+        SELECT 
+            COALESCE(NULLIF(lane_role, 0), 2) AS posId,
+            COUNT(1) AS games,
+            ROUND(SUM(CASE WHEN win = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) AS winRate,
+            ROUND(SUM(CASE WHEN lane_result = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) AS laneWinRate
+        FROM dota_match_player
+        WHERE account_id = #{accountId}
+        GROUP BY posId
+        ORDER BY games DESC
+    """)
+    List<Map<String, Object>> selectPositionStats(@Param("accountId") Long accountId);
+
+    // 统计组排对比 (单排 vs 双三排 vs 五黑)
+    @Select("""
+        SELECT 
+            CASE 
+                WHEN party_size = 1 THEN 'solo'
+                WHEN party_size IN (2, 3) THEN 'party'
+                WHEN party_size = 5 THEN 'stack5'
+                ELSE 'solo'
+            END AS queueType,
+            COUNT(1) AS games,
+            ROUND(SUM(CASE WHEN win = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) AS winRate,
+            ROUND(SUM(CASE WHEN is_mvp = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) AS mvpRate
+        FROM dota_match_player
+        WHERE account_id = #{accountId}
+        GROUP BY queueType
+    """)
+    List<Map<String, Object>> selectPartyStats(@Param("accountId") Long accountId);
+
+    // 统计天辉 vs 夜宴真实本地战绩
+    @Select("""
+        SELECT 
+            is_radiant AS isRadiant,
+            COUNT(1) AS games,
+            SUM(CASE WHEN win = 1 THEN 1 ELSE 0 END) AS wins,
+            ROUND(SUM(CASE WHEN win = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) AS winRate
+        FROM dota_match_player
+        WHERE account_id = #{accountId}
+        GROUP BY is_radiant
+    """)
+    List<Map<String, Object>> selectFactionStats(@Param("accountId") Long accountId);
 }

@@ -51,7 +51,7 @@ public class PlayerDashboardController {
     }
 
     /**
-     * 3. 看板完整聚合数据接口
+     * 3. 看板完整聚合数据接口 (纯本地数据库真实数据聚合)
      */
     @GetMapping("/{accountId}/dashboard")
     public Map<String, Object> getDashboardData(@PathVariable Long accountId) {
@@ -59,7 +59,16 @@ public class PlayerDashboardController {
         List<DotaPlayerHeroStats> topHeroes = heroStatsMapper.selectTopHeroes(accountId, 15);
         List<Map<String, Object>> teammates = matchPlayerMapper.selectTeammateSynergy(accountId);
 
-        // 最近 10 场明细
+        // 1. 各分路表现 Pos 1 ~ 5 (纯本地)
+        List<Map<String, Object>> positionStats = matchPlayerMapper.selectPositionStats(accountId);
+
+        // 2. 组队模式对比 Solo / Duo / 5-Stack (纯本地)
+        List<Map<String, Object>> partyStats = matchPlayerMapper.selectPartyStats(accountId);
+
+        // 3. 阵营胜率分布 (纯本地)
+        List<Map<String, Object>> factionStats = matchPlayerMapper.selectFactionStats(accountId);
+
+        // 4. 最近 10 场完整明细
         List<DotaMatchPlayer> recentMatches = matchPlayerMapper.selectList(new LambdaQueryWrapper<DotaMatchPlayer>()
                 .eq(DotaMatchPlayer::getAccountId, accountId)
                 .orderByDesc(DotaMatchPlayer::getStartTime)
@@ -69,7 +78,15 @@ public class PlayerDashboardController {
         res.put("summary", summary);
         res.put("topHeroes", topHeroes);
         res.put("teammates", teammates);
+        res.put("positionStats", positionStats);
+        res.put("partyStats", partyStats);
+        res.put("factionStats", factionStats);
         res.put("recentMatches", recentMatches);
         return res;
+    }
+//curl -X POST http://localhost:8088/api/player/199666669/recalculate gitbash重算
+    @PostMapping("/{accountId}/recalculate")
+    public Map<String, Object> recalculate(@PathVariable Long accountId) {
+        return openDotaService.recalculateAllLocalMatches(accountId);
     }
 }
