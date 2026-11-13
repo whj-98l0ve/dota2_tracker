@@ -5,12 +5,12 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 p-[1.5px] flex items-center justify-center shadow-lg shadow-cyan-500/20">
-            <div class="w-full h-full bg-[#0b0f19] rounded-[7px] flex items-center justify-center text-cyan-400 font-black">
-              N
+            <div class="w-full h-full bg-[#0b0f19] rounded-[7px] flex items-center justify-center text-cyan-400 font-black" @click="router.push('/')" style="cursor: pointer;">
+              毒
             </div>
           </div>
           <div class="flex items-baseline space-x-2">
-            <span class="text-xl font-black tracking-wide text-white">NEXUS<span class="text-cyan-400">.GG</span></span>
+            <span class="text-xl font-black tracking-wide text-white">毒瘤榜<span class="text-cyan-400">.GG</span></span>
             <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-400 font-bold border border-cyan-800/50">MOBA PRO STATS</span>
           </div>
         </div>
@@ -23,7 +23,7 @@
               type="text" 
               placeholder="搜索玩家 ID / 英雄 / 对局编号..." 
               class="w-72 bg-[#121721] border border-slate-700/60 text-xs rounded-lg px-3 py-2 pl-8 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-slate-200 placeholder-slate-500 transition-all"
-              @keydown.enter="handleStartSync"
+              @keydown.enter="handleSearch"
             />
             <span class="absolute left-2.5 top-2 text-slate-500 text-xs">🔍</span>
           </div>
@@ -365,9 +365,19 @@
             <span class="text-base font-bold text-white">本地高精度对局流水</span>
             <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">已入库 {{ recentMatches.length }} 场</span>
           </div>
-          <button @click="showRecentTable = !showRecentTable" class="text-xs text-cyan-400 hover:underline">
-            {{ showRecentTable ? '折叠明细' : '展开明细' }}
-          </button>
+          <div class="flex items-center gap-4">
+            <a 
+              :href="'/player/' + currentAccountId + '/history'" 
+              target="_blank" 
+              class="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 group transition-colors"
+            >
+              查看全部战绩
+              <span class="group-hover:translate-x-0.5 transition-transform">→</span>
+            </a>
+            <button @click="showRecentTable = !showRecentTable" class="text-xs text-slate-400 hover:text-slate-300">
+              {{ showRecentTable ? '折叠' : '展开' }}
+            </button>
+          </div>
         </div>
 
         <div v-show="showRecentTable" class="mt-4 overflow-x-auto">
@@ -383,8 +393,8 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60">
-              <tr v-for="m in recentMatches" :key="m.matchId" class="hover:bg-[#151c2a]">
-                <td class="py-2.5 px-3 text-slate-400">{{ m.matchId }}</td>
+              <tr v-for="m in recentMatches" :key="m.matchId" class="hover:bg-[#151c2a] cursor-pointer group" @click="openMatchDetail(m.matchId)">
+                <td class="py-2.5 px-3 text-slate-500 group-hover:text-cyan-400 transition-colors">{{ m.matchId }}</td>
                 <td class="py-2.5 px-3 font-bold text-white flex items-center gap-2">
                   <img :src="getHeroAvatar(m.heroId)" class="w-6 h-4 rounded object-cover" @error="handleImgError" />
                   <span>{{ getHeroName(m.heroId) }}</span>
@@ -415,15 +425,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import heroConstants from '../assets/dota2_heroes_constants.json';
 import { 
-  syncPlayerMatches, fetchDashboardData,
+  syncPlayerMatches, fetchDashboardData, fetchTaskStatus,
   type PlayerSummary, type PlayerHeroStats, type RecentMatch, type TeammateSynergy 
 } from '../api/player';
 
-const inputAccountId = ref('182595756');
-const currentAccountId = ref('182595756');
+const props = defineProps<{
+  accountId: string;
+}>();
+
+const router = useRouter();
+const inputAccountId = ref(props.accountId || '182595756');
+const currentAccountId = ref(props.accountId || '182595756');
 const syncing = ref(false);
 const showRecentTable = ref(true);
 
@@ -581,6 +597,54 @@ const localMvpRate = computed(() => {
   return Number(((mvpCount * 100.0) / recentMatches.value.length).toFixed(1));
 });
 
+// 点击战绩流水新开页面查看该场比赛详细数据，携带当前玩家 ID 高亮标识
+const openMatchDetail = (matchId: number) => {
+  const url = router.resolve({
+    name: 'MatchDetail',
+    params: { matchId },
+    query: { accountId: currentAccountId.value }
+  }).href;
+  window.open(url, '_blank');
+};
+
+const handleSearch = () => {
+  if (inputAccountId.value.trim()) {
+    router.push({ name: 'PlayerDashboard', params: { accountId: inputAccountId.value.trim() } });
+  }
+};
+
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+const stopPollingTasks = () => {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+};
+
+// 轮询后台录像解析进度，有新比赛入库时自动刷新看板数据
+const startPollingTasks = (accountId: string) => {
+  stopPollingTasks();
+  let lastSuccessCount = -1;
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await fetchTaskStatus(accountId);
+      const pending = Number(res?.data?.pending || 0);
+      const success = Number(res?.data?.success || 0);
+      if (lastSuccessCount !== -1 && success > lastSuccessCount) {
+        await loadData();
+      }
+      lastSuccessCount = success;
+      if (pending === 0) {
+        await loadData();
+        stopPollingTasks();
+      }
+    } catch (e) {
+      stopPollingTasks();
+    }
+  }, 6000);
+};
+
 // 触发同步与加载
 const handleStartSync = async () => {
   const accountId = inputAccountId.value.trim();
@@ -589,8 +653,11 @@ const handleStartSync = async () => {
   currentAccountId.value = accountId;
   syncing.value = true;
   try {
-    await syncPlayerMatches(accountId);
+    const syncRes = await syncPlayerMatches(accountId);
     await loadData();
+    if (Number(syncRes?.data?.queuedTasks || 0) > 0) {
+      startPollingTasks(accountId);
+    }
   } catch (err: any) {
     console.error('同步异常，继续加载本地数据库', err);
     await loadData();
@@ -618,8 +685,18 @@ const loadData = async () => {
 };
 
 onMounted(() => {
-  if (inputAccountId.value) {
-    currentAccountId.value = inputAccountId.value;
+  loadData();
+});
+
+onUnmounted(() => {
+  stopPollingTasks();
+});
+
+watch(() => props.accountId, (newId) => {
+  if (newId) {
+    stopPollingTasks();
+    currentAccountId.value = newId;
+    inputAccountId.value = newId;
     loadData();
   }
 });

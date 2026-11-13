@@ -12,7 +12,8 @@
     "ant-design-vue": "^4.2.6",
     "axios": "^1.21.0",
     "dotaconstants": "^10.8.0",
-    "vue": "^3.5.44"
+    "vue": "^3.5.44",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

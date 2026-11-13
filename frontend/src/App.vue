@@ -1,9 +1,8 @@
 <template>
-  <PlayerDashboard />
+  <router-view />
 </template>
 
 <script setup lang="ts">
-import PlayerDashboard from './views/PlayerDashboard.vue';
 </script>
 
 <style>

@@ -55,6 +55,7 @@ export interface RecentMatch {
   assists: number;
   kda: number;
   goldPerMin: number;
+  xpPerMin: number;
   laneResult: number;
   partySize: number;
   isMvp: boolean;
@@ -79,4 +80,13 @@ export const fetchTaskStatus = (accountId: string) => {
 
 export const fetchDashboardData = (accountId: string) => {
   return api.get(`/player/${accountId}/dashboard`);
+};
+
+export const fetchAllMatches = (accountId: string) => {
+  return api.get(`/player/${accountId}/matches`);
+};
+
+// 查询单场比赛高精详情数据 (对应后端 /api/player/match/{matchId})
+export const fetchMatchDetail = (matchId: string) => {
+  return api.get(`/player/match/${matchId}`);
 };

@@ -1,6 +1,8 @@
 package com.whj_98l0ve.dota2_tracker.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.whj_98l0ve.dota2_tracker.entity.*;
 import com.whj_98l0ve.dota2_tracker.mapper.*;
 import com.whj_98l0ve.dota2_tracker.service.OpenDotaService;
@@ -21,7 +23,9 @@ public class PlayerDashboardController {
     private final DotaPlayerSummaryMapper summaryMapper;
     private final DotaPlayerHeroStatsMapper heroStatsMapper;
     private final DotaMatchPlayerMapper matchPlayerMapper;
+    private final DotaMatchRawMapper matchRawMapper;
     private final DotaParseTaskMapper taskMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 1. 录入玩家 ID 并启动 7 天对局同步与解析流
@@ -39,7 +43,9 @@ public class PlayerDashboardController {
         List<DotaParseTask> tasks = taskMapper.selectList(new LambdaQueryWrapper<DotaParseTask>()
                 .eq(DotaParseTask::getAccountId, accountId)
                 .orderByDesc(DotaParseTask::getId));
-        long pending = tasks.stream().filter(t -> "PENDING".equals(t.getStatus()) || "REQUESTED".equals(t.getStatus())).count();
+        long pending = tasks.stream()
+                .filter(t -> "PENDING".equals(t.getStatus()) || "READY_TO_FETCH".equals(t.getStatus()) || "REQUESTED".equals(t.getStatus()))
+                .count();
         long success = tasks.stream().filter(t -> "SUCCESS".equals(t.getStatus())).count();
 
         Map<String, Object> res = new HashMap<>();
@@ -88,5 +94,39 @@ public class PlayerDashboardController {
     @PostMapping("/{accountId}/recalculate")
     public Map<String, Object> recalculate(@PathVariable Long accountId) {
         return openDotaService.recalculateAllLocalMatches(accountId);
+    }
+
+    /**
+     * 4. 查询玩家全量历史战绩 (支持分页)
+     */
+    @GetMapping("/{accountId}/matches")
+    public List<DotaMatchPlayer> getAllMatches(@PathVariable Long accountId) {
+        return matchPlayerMapper.selectList(new LambdaQueryWrapper<DotaMatchPlayer>()
+                .eq(DotaMatchPlayer::getAccountId, accountId)
+                .orderByDesc(DotaMatchPlayer::getStartTime));
+    }
+
+    /**
+     * 5. 查询单场比赛详情 (包括比赛概况、已解析的完整原始 JSON 节点和所有玩家计算指标)
+     */
+    @GetMapping("/match/{matchId}")
+    public Map<String, Object> getMatchDetail(@PathVariable Long matchId) {
+        DotaMatchRaw raw = matchRawMapper.selectById(matchId);
+        List<DotaMatchPlayer> players = matchPlayerMapper.selectList(new LambdaQueryWrapper<DotaMatchPlayer>()
+                .eq(DotaMatchPlayer::getMatchId, matchId)
+                .orderByAsc(DotaMatchPlayer::getPlayerSlot));
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("match", raw);
+        res.put("players", players);
+        // 直接将数据库保存的高精度原始 JSON 解析为结构化对象返回给前端，便于前端多维战术面板直接渲染
+        if (raw != null && raw.getRawData() != null && !raw.getRawData().isBlank()) {
+            try {
+                JsonNode rawJson = objectMapper.readTree(raw.getRawData());
+                res.put("rawJson", rawJson);
+            } catch (Exception ignored) {
+            }
+        }
+        return res;
     }
 }

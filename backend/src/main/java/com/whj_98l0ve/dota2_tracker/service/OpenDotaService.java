@@ -77,21 +77,42 @@ public class OpenDotaService {
                 continue;
             }
 
-            // 判定 2：查询任务表状态
-            DotaParseTask existingTask = taskMapper.selectOne(new LambdaQueryWrapper<DotaParseTask>()
-                    .eq(DotaParseTask::getMatchId, matchId)
-                    .last("LIMIT 1"));
-
-            if (existingTask != null && Arrays.asList("PENDING", "READY_TO_FETCH", "REQUESTED").contains(existingTask.getStatus())) {
-                continue;
-            }
-
-            // 判定 3：检查官方是否已解析 (version > 0)
+            // 判定 2：检查官方是否已解析 (version > 0)
             boolean hasParsedByOpenDota = m.has("version") && m.path("version").asInt(0) > 0;
             String status = hasParsedByOpenDota ? "READY_TO_FETCH" : "PENDING";
             LocalDateTime nextCheck = LocalDateTime.now();
 
+            // 判定 3：查询任务表状态（可能由开黑队友或上一次同步创建）
+            DotaParseTask existingTask = taskMapper.selectOne(new LambdaQueryWrapper<DotaParseTask>()
+                    .eq(DotaParseTask::getMatchId, matchId)
+                    .last("LIMIT 1"));
+
             if (existingTask != null) {
+                // 若此前任务处于 PENDING/REQUESTED（例如队友先同步时还未解析完），但当前 OpenDota 列表显示已解析完 (version > 0)，
+                // 则立即升级为 READY_TO_FETCH 并重置检查时间，避免继续苦等或被饿死
+                if (hasParsedByOpenDota && !"READY_TO_FETCH".equals(existingTask.getStatus())) {
+                    existingTask.setAccountId(accountId);
+                    existingTask.setStatus("READY_TO_FETCH");
+                    existingTask.setCheckCount(0);
+                    existingTask.setNextCheckTime(nextCheck);
+                    taskMapper.updateById(existingTask);
+                    queuedTasks++;
+                    continue;
+                }
+
+                // 若任务已在队列中等待处理，将归属关联更新为当前请求玩家并唤醒检查时间，跳过重复插入
+                if (Arrays.asList("PENDING", "READY_TO_FETCH", "REQUESTED").contains(existingTask.getStatus())) {
+                    existingTask.setAccountId(accountId);
+                    if ("READY_TO_FETCH".equals(existingTask.getStatus())) {
+                        existingTask.setNextCheckTime(nextCheck);
+                    }
+                    taskMapper.updateById(existingTask);
+                    queuedTasks++;
+                    continue;
+                }
+
+                // 其它状态（如 FAILED）则重新激活任务
+                existingTask.setAccountId(accountId);
                 existingTask.setStatus(status);
                 existingTask.setCheckCount(0);
                 existingTask.setNextCheckTime(nextCheck);
@@ -109,6 +130,9 @@ public class OpenDotaService {
             queuedTasks++;
         }
 
+        // 无论是否有新增排队任务，先基于本地已有的比赛（包括队友已同步过的双排/多排比赛）刷新一次该玩家的统计指标
+        refreshPlayerMetrics(accountId);
+
         result.put("totalFound", totalFound);
         result.put("alreadyInDb", alreadyInDb);
         result.put("queuedTasks", queuedTasks);
@@ -121,10 +145,11 @@ public class OpenDotaService {
      */
     @Scheduled(fixedDelay = 6000)
     public void pollParseTasks() {
-        // 1. 发送解析请求 POST /request
+        // 1. 发送解析请求 POST /request（按 match_id 倒序优先请求最新比赛）
         List<DotaParseTask> pendingTasks = taskMapper.selectList(new LambdaQueryWrapper<DotaParseTask>()
                 .eq(DotaParseTask::getStatus, "PENDING")
                 .le(DotaParseTask::getNextCheckTime, LocalDateTime.now())
+                .orderByDesc(DotaParseTask::getMatchId)
                 .last("LIMIT 1"));
 
         for (DotaParseTask task : pendingTasks) {
@@ -142,10 +167,11 @@ public class OpenDotaService {
             log.info("比赛 {} 已提交官方解析队列, jobId={}", task.getMatchId(), jobId);
         }
 
-        // 2. 拉取详情大 JSON
+        // 2. 拉取详情大 JSON（对已到检查时间的任务按 match_id 倒序拉取，确保优先消费最新比赛，且避免 READY_TO_FETCH 饿死 REQUESTED 任务）
         List<DotaParseTask> fetchTasks = taskMapper.selectList(new LambdaQueryWrapper<DotaParseTask>()
                 .in(DotaParseTask::getStatus, "READY_TO_FETCH", "REQUESTED")
                 .le(DotaParseTask::getNextCheckTime, LocalDateTime.now())
+                .orderByDesc(DotaParseTask::getMatchId)
                 .last("LIMIT 2"));
 
         for (DotaParseTask task : fetchTasks) {
@@ -164,16 +190,16 @@ public class OpenDotaService {
                     task.setStatus("SUCCESS");
                     taskMapper.updateById(task);
 
-                    // 重新聚合该玩家在数据库中的分析统计指标
-                    refreshPlayerMetrics(task.getAccountId());
+                    // 重新聚合任务发起玩家及本局中所有已关注玩家的统计指标（解决双排/车队共享比赛只刷新单人指标的问题）
+                    refreshTrackedPlayersInMatch(task.getAccountId(), matchRoot);
                     log.info("🎉 比赛 {} 高精度录像入库完毕，已更新本地指标", task.getMatchId());
                     continue;
                 }
 
-                // 无录像或等待解析中
+                // 无录像或等待解析中：若原本误判为 READY_TO_FETCH，则退回 PENDING 触发官方解析请求
                 if ("READY_TO_FETCH".equals(task.getStatus())) {
-                    task.setStatus("REQUESTED");
-                    task.setNextCheckTime(LocalDateTime.now().plusSeconds(30));
+                    task.setStatus("PENDING");
+                    task.setNextCheckTime(LocalDateTime.now().plusSeconds(10));
                 } else {
                     int count = task.getCheckCount() + 1;
                     task.setCheckCount(count);
@@ -259,17 +285,17 @@ public class OpenDotaService {
                 }
             }
 
-            // 3. 计算各条线的经济总和 (用于判定对线 800 经济差)
+            // 3. 计算各条地图分路的 10 分钟经济总和 (OpenDota 中 lane: 1=下路, 2=中路, 3=上路)
             int radiantMidGold = sumLaneGold(players, true, 2, laneMap, gold10mMap);
             int direMidGold = sumLaneGold(players, false, 2, laneMap, gold10mMap);
 
-            // 天辉优势路(1+5) vs 夜宴劣势路(3+4)
-            int radiantSafeGold = sumLaneGold(players, true, 1, laneMap, gold10mMap);
-            int direOffGold = sumLaneGold(players, false, 3, laneMap, gold10mMap);
+            // 下路 (lane=1)：天辉优势路(1+5) vs 夜魇劣势路(3+4)
+            int radiantBotGold = sumLaneGold(players, true, 1, laneMap, gold10mMap);
+            int direBotGold = sumLaneGold(players, false, 1, laneMap, gold10mMap);
 
-            // 天辉劣势路(3+4) vs 夜宴优势路(1+5)
-            int radiantOffGold = sumLaneGold(players, true, 3, laneMap, gold10mMap);
-            int direSafeGold = sumLaneGold(players, false, 1, laneMap, gold10mMap);
+            // 上路 (lane=3)：天辉劣势路(3+4) vs 夜魇优势路(1+5)
+            int radiantTopGold = sumLaneGold(players, true, 3, laneMap, gold10mMap);
+            int direTopGold = sumLaneGold(players, false, 3, laneMap, gold10mMap);
 
             // 4. 【第二轮循环】：逐个选手计算精准 Pos 1~5 并判定对线胜负，执行入库
             for (JsonNode p : players) {
@@ -286,31 +312,36 @@ public class OpenDotaService {
 
                 int lane = laneMap.getOrDefault(playerSlot, 0);
 
-                // --- 核心 A：精准推导 1~5 号位 ---
+                // --- 核心 A：结合阵营与地图上下路精准推导 1~5 号位 ---
+                // 天辉下路(lane=1)和夜魇上路(lane=3)为优势路；天辉上路(lane=3)和夜魇下路(lane=1)为劣势路
                 int calculatedPos = 2; // 默认中单
                 String key = (isRadiant ? "R_" : "D_") + lane;
                 boolean isLaneCore = laneCoreSlotMap.getOrDefault(key, -1) == playerSlot;
+                boolean isSafeLane = (isRadiant && lane == 1) || (!isRadiant && lane == 3);
+                boolean isOffLane = (isRadiant && lane == 3) || (!isRadiant && lane == 1);
 
                 if (lane == 2) {
                     calculatedPos = 2; // 中单 Pos 2
-                } else if (lane == 1) {
+                } else if (isSafeLane) {
                     // 优势路：经济多的是 Pos 1，少的是 Pos 5
                     calculatedPos = isLaneCore ? 1 : 5;
-                } else if (lane == 3) {
+                } else if (isOffLane) {
                     // 劣势路：经济多的是 Pos 3，少的是 Pos 4
                     calculatedPos = isLaneCore ? 3 : 4;
                 } else {
                     calculatedPos = 4; // 游走辅助
                 }
 
-                // --- 核心 B：800 经济差判定对线优劣 ---
+                // --- 核心 B：同路正面对位 800 经济差判定对线优劣 ---
                 int diff = 0;
                 if (lane == 2) {
                     diff = isRadiant ? (radiantMidGold - direMidGold) : (direMidGold - radiantMidGold);
-                } else if ((isRadiant && lane == 1) || (!isRadiant && lane == 3)) {
-                    diff = isRadiant ? (radiantSafeGold - direOffGold) : (direOffGold - radiantSafeGold);
-                } else if ((isRadiant && lane == 3) || (!isRadiant && lane == 1)) {
-                    diff = isRadiant ? (radiantOffGold - direSafeGold) : (direSafeGold - radiantOffGold);
+                } else if (lane == 1) {
+                    // 下路正面对决：天辉下路 vs 夜魇下路
+                    diff = isRadiant ? (radiantBotGold - direBotGold) : (direBotGold - radiantBotGold);
+                } else if (lane == 3) {
+                    // 上路正面对决：天辉上路 vs 夜魇上路
+                    diff = isRadiant ? (radiantTopGold - direTopGold) : (direTopGold - radiantTopGold);
                 }
 
                 int laneResult = 2; // 默认均势
@@ -393,6 +424,28 @@ public class OpenDotaService {
         heroStatsMapper.refreshPlayerHeroStats(accountId);
     }
 
+    /**
+     * 刷新本局比赛中所有已在本地建档玩家的统计指标（确保双排/车队队友同步受益）
+     */
+    private void refreshTrackedPlayersInMatch(Long taskAccountId, JsonNode matchRoot) {
+        Set<Long> accountsToRefresh = new HashSet<>();
+        if (taskAccountId != null && taskAccountId > 0) {
+            accountsToRefresh.add(taskAccountId);
+        }
+        JsonNode players = matchRoot.path("players");
+        if (players.isArray()) {
+            for (JsonNode p : players) {
+                long accId = p.path("account_id").asLong(0);
+                if (accId > 0 && summaryMapper.selectById(accId) != null) {
+                    accountsToRefresh.add(accId);
+                }
+            }
+        }
+        for (Long accId : accountsToRefresh) {
+            refreshPlayerMetrics(accId);
+        }
+    }
+
     private void syncPlayerProfile(Long accountId) {
         try {
             JsonNode root = openDotaClient.get("/players/" + accountId);
@@ -437,8 +490,16 @@ public class OpenDotaService {
             }
         }
 
-        // 2. 重新刷新该玩家的全部统计聚合指标
+        // 2. 重新刷新所有已建档玩家及指定玩家的统计聚合指标
         refreshPlayerMetrics(accountId);
+        List<DotaPlayerSummary> allPlayers = summaryMapper.selectList(null);
+        if (allPlayers != null) {
+            for (DotaPlayerSummary s : allPlayers) {
+                if (s.getAccountId() != null && !s.getAccountId().equals(accountId)) {
+                    refreshPlayerMetrics(s.getAccountId());
+                }
+            }
+        }
 
         Map<String, Object> res = new HashMap<>();
         res.put("recalculatedMatches", updatedCount);
