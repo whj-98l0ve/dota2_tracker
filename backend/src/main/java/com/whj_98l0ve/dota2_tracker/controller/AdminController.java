@@ -52,11 +52,31 @@ public class AdminController {
     }
 
     /**
-     * 3. 增加关注的玩家 ID（并立即触发一次比赛检查同步）
+     * 3. 增加关注的玩家 ID（支持同时传入备注 remark，并立即触发一次比赛检查同步）
      */
     @PostMapping("/players/{accountId}")
-    public Map<String, Object> addTrackedPlayer(@PathVariable Long accountId) {
-        return openDotaService.addTrackedPlayer(accountId);
+    public Map<String, Object> addTrackedPlayer(
+            @PathVariable Long accountId,
+            @RequestBody(required = false) Map<String, String> body
+    ) {
+        String remark = body != null ? body.get("remark") : null;
+        return openDotaService.addTrackedPlayer(accountId, remark);
+    }
+
+    /**
+     * 3.1 修改或设置关注玩家的备注名称（同时支持 POST 与 PUT）
+     */
+    @RequestMapping(value = "/players/{accountId}/remark", method = {RequestMethod.POST, RequestMethod.PUT})
+    public Map<String, Object> updatePlayerRemark(
+            @PathVariable Long accountId,
+            @RequestBody Map<String, String> body
+    ) {
+        String remark = body != null ? body.get("remark") : null;
+        boolean updated = openDotaService.updateTrackedPlayerRemark(accountId, remark);
+        Map<String, Object> res = new HashMap<>();
+        res.put("success", updated);
+        res.put("msg", updated ? "玩家备注已保存" : "未找到该玩家记录");
+        return res;
     }
 
     /**

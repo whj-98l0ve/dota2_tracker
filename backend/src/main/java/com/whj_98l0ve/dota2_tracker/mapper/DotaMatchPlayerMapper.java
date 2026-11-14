@@ -196,6 +196,7 @@ public interface DotaMatchPlayerMapper extends BaseMapper<DotaMatchPlayer> {
         SELECT 
             s.account_id AS accountId,
             s.personaname AS personaname,
+            s.remark AS remark,
             s.avatar AS avatar,
             s.rank_tier AS rankTier,
             s.leaderboard_rank AS leaderboardRank,
@@ -205,7 +206,7 @@ public interface DotaMatchPlayerMapper extends BaseMapper<DotaMatchPlayer> {
         FROM dota_player_summary s
         LEFT JOIN dota_match_player mp ON s.account_id = mp.account_id
         WHERE s.is_tracked = 1
-        GROUP BY s.account_id, s.personaname, s.avatar, s.rank_tier, s.leaderboard_rank, s.total_matches, s.win_rate
+        GROUP BY s.account_id, s.personaname, s.remark, s.avatar, s.rank_tier, s.leaderboard_rank, s.total_matches, s.win_rate
         ORDER BY lastMatchTime DESC, s.total_matches DESC
     """)
     List<Map<String, Object>> selectTrackedPlayersWithLastMatch();

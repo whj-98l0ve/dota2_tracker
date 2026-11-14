@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS `dota_player_hero_stats` (
 CREATE TABLE IF NOT EXISTS `dota_player_summary` (
   `account_id` bigint NOT NULL COMMENT 'Steam32 玩家ID',
   `personaname` varchar(64) DEFAULT NULL COMMENT 'Steam 昵称',
+  `remark` varchar(64) DEFAULT NULL COMMENT '管理员为关注玩家设置的备注名称',
   `avatar` varchar(512) DEFAULT NULL COMMENT 'Steam 头像完整 URL',
   `rank_tier` int DEFAULT '0' COMMENT 'OpenDota 段位代码 (如 75:超凡5星, 80:冠绝一世)',
   `leaderboard_rank` int DEFAULT NULL COMMENT '冠绝一世天梯具体排名 (如 698 表示冠绝698)',

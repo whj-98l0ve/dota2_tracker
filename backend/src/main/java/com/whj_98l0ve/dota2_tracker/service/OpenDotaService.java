@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.whj_98l0ve.dota2_tracker.client.OpenDotaClient;
 import com.whj_98l0ve.dota2_tracker.entity.*;
 import com.whj_98l0ve.dota2_tracker.mapper.*;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +32,27 @@ public class OpenDotaService {
     private final DotaPlayerSummaryMapper summaryMapper;
     private final DotaPlayerHeroStatsMapper heroStatsMapper;
     private final DotaParseTaskMapper taskMapper;
+    private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * 启动时自动检查 dota_player_summary 表是否包含 remark 备注列，若旧库缺失则自动补齐
+     */
+    @PostConstruct
+    public void ensureRemarkColumnExists() {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(1) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dota_player_summary' AND COLUMN_NAME = 'remark'",
+                    Integer.class
+            );
+            if (count == null || count == 0) {
+                jdbcTemplate.execute("ALTER TABLE dota_player_summary ADD COLUMN remark VARCHAR(64) DEFAULT NULL COMMENT '管理员备注名称' AFTER personaname");
+                log.info("✅ 已自动为 dota_player_summary 表补充 remark 备注字段");
+            }
+        } catch (Exception e) {
+            log.debug("检查/补充 remark 字段跳过: {}", e.getMessage());
+        }
+    }
 
     /**
      * 每小时定时巡检的关注玩家错峰队列：
@@ -47,15 +69,38 @@ public class OpenDotaService {
     public Map<String, Object> syncPlayerRecentMatches(Long accountId) {
         Map<String, Object> result = new HashMap<>();
 
+        // 若当前处于 10 分钟全局熔断期，直接跳过远程请求降级返回本地数据
+        if (openDotaClient.isCircuitBreakerOpen()) {
+            log.warn("⛔ [熔断器拦截] 当前处于 OpenDota 熔断冷却期 (剩余 {} 秒)，玩家 [{}] 直接降级读取本地数据",
+                    openDotaClient.getCircuitBreakerRemainingSeconds(), accountId);
+            result.put("totalFound", 0);
+            result.put("alreadyInDb", 0);
+            result.put("queuedTasks", 0);
+            result.put("fallback", true);
+            result.put("msg", "OpenDota 服务熔断保护中，直接从本地数据库呈现");
+            return result;
+        }
+
         // 1. 同步玩家基本资料（只存头像和昵称）
         syncPlayerProfile(accountId);
 
+        // 若同步资料时已触发熔断，则不再继续请求比赛列表
+        if (openDotaClient.isCircuitBreakerOpen()) {
+            result.put("totalFound", 0);
+            result.put("alreadyInDb", 0);
+            result.put("queuedTasks", 0);
+            result.put("fallback", true);
+            result.put("msg", "OpenDota 服务熔断保护中，直接从本地数据库呈现");
+            return result;
+        }
+
         // 2. 调用 OpenDota 获取比赛列表：优先请求 7 天内比赛记录 (?date=7)，避免全量拉取触发 OpenDota 500 错误；
-        //    若 7 天内记录请求也报错或返回非数组，则自动降级请求 recentMatches 接口
+        //    若 7 天内记录请求也报错或返回非数组（且未触发全局熔断），则自动降级请求 recentMatches (20场) 接口
         boolean usedRecentMatchesFallback = false;
         JsonNode matchesArray = openDotaClient.get("/players/" + accountId + "/matches?date=7");
 
-        if (matchesArray == null || !matchesArray.isArray() || matchesArray.has("error")) {
+        if ((matchesArray == null || !matchesArray.isArray() || matchesArray.has("error"))
+                && !openDotaClient.isCircuitBreakerOpen()) {
             log.warn("⚠️ 获取玩家 [{}] 7天内比赛记录 (matches?date=7) 报错或为空，自动降级请求 recentMatches 接口...", accountId);
             matchesArray = openDotaClient.get("/players/" + accountId + "/recentMatches");
             usedRecentMatchesFallback = true;
@@ -163,6 +208,11 @@ public class OpenDotaService {
      */
     @Scheduled(fixedDelay = 6000)
     public void pollParseTasks() {
+        // 若处于 10 分钟全局熔断冷却期，暂停后台解析与详情拉取，等待满 10 分钟后自动恢复探测
+        if (openDotaClient.isCircuitBreakerOpen()) {
+            return;
+        }
+
         // 1. 发送解析请求 POST /request（按 match_id 倒序优先请求最新比赛）
         List<DotaParseTask> pendingTasks = taskMapper.selectList(new LambdaQueryWrapper<DotaParseTask>()
                 .eq(DotaParseTask::getStatus, "PENDING")
@@ -171,6 +221,9 @@ public class OpenDotaService {
                 .last("LIMIT 1"));
 
         for (DotaParseTask task : pendingTasks) {
+            if (openDotaClient.isCircuitBreakerOpen()) {
+                return;
+            }
             String jobId = triggerOpenDotaParse(task.getMatchId());
             if (jobId == null) {
                 task.setNextCheckTime(LocalDateTime.now().plusSeconds(45));
@@ -186,6 +239,9 @@ public class OpenDotaService {
         }
 
         // 2. 拉取详情大 JSON（对已到检查时间的任务按 match_id 倒序拉取，确保优先消费最新比赛，且避免 READY_TO_FETCH 饿死 REQUESTED 任务）
+        if (openDotaClient.isCircuitBreakerOpen()) {
+            return;
+        }
         List<DotaParseTask> fetchTasks = taskMapper.selectList(new LambdaQueryWrapper<DotaParseTask>()
                 .in(DotaParseTask::getStatus, "READY_TO_FETCH", "REQUESTED")
                 .le(DotaParseTask::getNextCheckTime, LocalDateTime.now())
@@ -193,6 +249,9 @@ public class OpenDotaService {
                 .last("LIMIT 2"));
 
         for (DotaParseTask task : fetchTasks) {
+            if (openDotaClient.isCircuitBreakerOpen()) {
+                break;
+            }
             try {
                 JsonNode matchRoot = openDotaClient.get("/matches/" + task.getMatchId());
 
@@ -519,6 +578,11 @@ public class OpenDotaService {
      */
     @Scheduled(fixedDelay = 20000, initialDelay = 20000)
     public void consumeTrackedPlayerSyncQueue() {
+        // 若处于 10 分钟全局熔断冷却期，暂不从队列中弹出玩家，等待 10 分钟期满后再取出玩家发起恢复探测
+        if (openDotaClient.isCircuitBreakerOpen()) {
+            return;
+        }
+
         Long accountId = hourlySyncQueue.poll();
         if (accountId == null) {
             return;
@@ -527,6 +591,14 @@ public class OpenDotaService {
         if (summary != null && Integer.valueOf(1).equals(summary.getIsTracked())) {
             log.info("🔍 [关注玩家错峰巡检] 正在检查玩家 [{}] 是否有新比赛 (队列剩余: {})...", accountId, hourlySyncQueue.size());
             Map<String, Object> syncRes = syncPlayerRecentMatches(accountId);
+            // 若本次检查恰好触发了熔断导致失败，将该玩家重新放回队列尾部，等 10 分钟熔断恢复后再重新检查
+            if (Boolean.TRUE.equals(syncRes.get("fallback")) && openDotaClient.isCircuitBreakerOpen()) {
+                if (!hourlySyncQueue.contains(accountId)) {
+                    hourlySyncQueue.offer(accountId);
+                }
+                log.warn("⏸️ [关注玩家错峰巡检] 玩家 [{}] 检查期间触发全局熔断，已放回巡检队列等待 10 分钟后重试", accountId);
+                return;
+            }
             log.info("✅ [关注玩家错峰巡检] 玩家 [{}] 检查完毕: 发现近期比赛={}, 已在库={}, 新增入队={}",
                     accountId, syncRes.get("totalFound"), syncRes.get("alreadyInDb"), syncRes.get("queuedTasks"));
         }
@@ -547,6 +619,8 @@ public class OpenDotaService {
         res.put("queuedIds", new ArrayList<>(hourlySyncQueue));
         res.put("lastHourlyScheduleTime", lastHourlyScheduleTime);
         res.put("nextHourlyScheduleTime", nextHourlyScheduleTime);
+        res.put("circuitBreakerOpen", openDotaClient.isCircuitBreakerOpen());
+        res.put("circuitBreakerRemainingSeconds", openDotaClient.getCircuitBreakerRemainingSeconds());
         return res;
     }
 
@@ -554,11 +628,17 @@ public class OpenDotaService {
      * 管理员接口：新增关注的玩家 ID，并立即触发一次同步或加入错峰队列
      */
     public Map<String, Object> addTrackedPlayer(Long accountId) {
+        return addTrackedPlayer(accountId, null);
+    }
+
+    public Map<String, Object> addTrackedPlayer(Long accountId, String remark) {
+        String cleanRemark = (remark != null && !remark.trim().isEmpty()) ? remark.trim() : null;
         DotaPlayerSummary existing = summaryMapper.selectById(accountId);
         if (existing == null) {
             existing = new DotaPlayerSummary();
             existing.setAccountId(accountId);
             existing.setPersonaname("Player#" + accountId);
+            existing.setRemark(cleanRemark);
             existing.setRankTier(0);
             existing.setTotalMatches(0);
             existing.setTotalWins(0);
@@ -567,20 +647,46 @@ public class OpenDotaService {
             summaryMapper.insert(existing);
         } else {
             existing.setIsTracked(1);
+            if (cleanRemark != null) {
+                existing.setRemark(cleanRemark);
+            }
             existing.setLastSyncAt(LocalDateTime.now());
             summaryMapper.updateById(existing);
         }
         // 同步该玩家基本资料与近期比赛
         Map<String, Object> syncRes = syncPlayerRecentMatches(accountId);
-        // 确保 is_tracked 保持为 1
+        // 确保 is_tracked 与 remark 保持最新
         DotaPlayerSummary updated = summaryMapper.selectById(accountId);
-        if (updated != null && !Integer.valueOf(1).equals(updated.getIsTracked())) {
-            updated.setIsTracked(1);
-            summaryMapper.updateById(updated);
+        if (updated != null) {
+            boolean needUpdate = false;
+            if (!Integer.valueOf(1).equals(updated.getIsTracked())) {
+                updated.setIsTracked(1);
+                needUpdate = true;
+            }
+            if (cleanRemark != null && !cleanRemark.equals(updated.getRemark())) {
+                updated.setRemark(cleanRemark);
+                needUpdate = true;
+            }
+            if (needUpdate) {
+                summaryMapper.updateById(updated);
+            }
         }
         Map<String, Object> res = new HashMap<>(syncRes);
         res.put("player", summaryMapper.selectById(accountId));
         return res;
+    }
+
+    /**
+     * 管理员接口：设置或修改关注玩家的备注名称
+     */
+    public boolean updateTrackedPlayerRemark(Long accountId, String remark) {
+        DotaPlayerSummary existing = summaryMapper.selectById(accountId);
+        if (existing == null) {
+            return false;
+        }
+        String cleanRemark = (remark != null && !remark.trim().isEmpty()) ? remark.trim() : null;
+        summaryMapper.updatePlayerRemark(accountId, cleanRemark);
+        return true;
     }
 
     /**

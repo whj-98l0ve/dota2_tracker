@@ -23,18 +23,8 @@
           </div>
         </div>
 
-        <!-- 右侧：快捷查询对局 ID、复制与返回 -->
+        <!-- 右侧：复制对局 ID 与返回 -->
         <div class="flex items-center gap-3">
-          <div class="hidden sm:flex items-center relative">
-            <input
-              v-model="searchMatchInput"
-              type="text"
-              placeholder="输入其他比赛 ID 跳转..."
-              class="w-48 bg-[#121721] border border-slate-700/70 text-xs rounded-lg px-3 py-1.5 font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-              @keydown.enter="jumpToMatch"
-            />
-          </div>
-
           <button
             @click="copyMatchId"
             class="flex items-center gap-1.5 text-xs text-slate-300 bg-[#121721] hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700/80 font-mono transition-colors"
@@ -339,6 +329,7 @@
       <MatchCombatTab
         v-else-if="activeTab === 'combat'"
         :players="enrichedPlayers"
+        :highlightAccountId="highlightAccountId"
       />
 
       <!-- Tab 5: 团战复盘与关键战略事件轴 -->
@@ -391,7 +382,6 @@ const router = useRouter();
 
 const loading = ref(true);
 const copied = ref(false);
-const searchMatchInput = ref('');
 const matchResponse = ref<any>(null);
 const rawJson = ref<any>(null);
 
@@ -839,14 +829,6 @@ const copyMatchId = async () => {
       copied.value = false;
     }, 2000);
   } catch (e) {}
-};
-
-const jumpToMatch = () => {
-  const target = searchMatchInput.value.trim();
-  if (target && /^\d+$/.test(target)) {
-    router.push({ name: 'MatchDetail', params: { matchId: target }, query: route.query });
-    searchMatchInput.value = '';
-  }
 };
 
 const goBackOrHome = () => {

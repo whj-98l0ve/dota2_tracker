@@ -107,13 +107,20 @@
             </p>
           </div>
 
-          <!-- 新增关注 ID 表单 -->
-          <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
+          <!-- 新增关注 ID 表单（支持同时填写备注） -->
+          <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
             <input
               v-model="newAccountId"
               type="text"
-              placeholder="输入要关注的 Steam32 ID (如 199666669)"
-              class="w-full sm:w-64 bg-[#0b0e14] border border-slate-700/80 text-xs rounded-xl px-3.5 py-2.5 text-slate-200 placeholder-slate-500 font-mono focus:outline-none focus:border-cyan-500"
+              placeholder="输入 Steam32 ID (如 199666669)"
+              class="w-full sm:w-52 bg-[#0b0e14] border border-slate-700/80 text-xs rounded-xl px-3.5 py-2.5 text-slate-200 placeholder-slate-500 font-mono focus:outline-none focus:border-cyan-500"
+              @keydown.enter="handleAddPlayer"
+            />
+            <input
+              v-model="newRemark"
+              type="text"
+              placeholder="备注名称 (选填，如: 老王)"
+              class="w-full sm:w-44 bg-[#0b0e14] border border-slate-700/80 text-xs rounded-xl px-3.5 py-2.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-400"
               @keydown.enter="handleAddPlayer"
             />
             <button
@@ -201,6 +208,7 @@
             <thead class="bg-[#0b0e14] text-slate-400 border-b border-slate-800">
               <tr>
                 <th class="py-3 px-4">玩家信息</th>
+                <th class="py-3 px-4">玩家备注</th>
                 <th class="py-3 px-4">Steam32 ID</th>
                 <th class="py-3 px-4">天梯段位 / 排名</th>
                 <th class="py-3 px-4">本地收录对局 / 胜率</th>
@@ -226,10 +234,47 @@
                         class="font-bold text-white hover:text-cyan-400 cursor-pointer transition-colors"
                         @click="router.push(`/player/${p.accountId}`)"
                       >
-                        {{ p.personaname || `Player#${p.accountId}` }}
+                        {{ p.personaname || `Player#${p.accountId}` }}<span v-if="p.remark" class="text-amber-400 font-semibold ml-0.5">（{{ p.remark }}）</span>
                       </div>
                       <div class="text-[10px] text-slate-500">点击查看战绩看板</div>
                     </div>
+                  </div>
+                </td>
+                <td class="py-3.5 px-4">
+                  <div v-if="editingRemarkId === p.accountId" class="flex items-center gap-1.5">
+                    <input
+                      v-model="editingRemarkValue"
+                      type="text"
+                      placeholder="输入备注 (留空清除)"
+                      class="w-32 bg-[#0b0e14] border border-amber-400/60 rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
+                      @keydown.enter="savePlayerRemark(p.accountId)"
+                      @keydown.esc="cancelEditRemark"
+                    />
+                    <button
+                      @click="savePlayerRemark(p.accountId)"
+                      :disabled="savingRemarkMap[p.accountId]"
+                      class="px-2 py-1 rounded bg-amber-400 hover:bg-amber-300 text-black font-black text-[11px] transition-colors disabled:opacity-50"
+                    >
+                      保存
+                    </button>
+                    <button
+                      @click="cancelEditRemark"
+                      class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition-colors"
+                    >
+                      取消
+                    </button>
+                  </div>
+                  <div v-else class="flex items-center gap-2">
+                    <span v-if="p.remark" class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold text-[11px]">
+                      {{ p.remark }}
+                    </span>
+                    <span v-else class="text-slate-600 text-[11px]">未设置</span>
+                    <button
+                      @click="startEditRemark(p)"
+                      class="px-2 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[10px] transition-colors"
+                    >
+                      {{ p.remark ? '✏️ 修改' : '+ 备注' }}
+                    </button>
                   </div>
                 </td>
                 <td class="py-3.5 px-4 text-cyan-400 font-bold">
@@ -284,7 +329,7 @@
                 </td>
               </tr>
               <tr v-if="trackedPlayers.length === 0">
-                <td colspan="7" class="py-10 text-center text-slate-500">
+                <td colspan="8" class="py-10 text-center text-slate-500">
                   当前暂无关注的玩家 ID，请在上方输入框添加
                 </td>
               </tr>
@@ -303,6 +348,7 @@ import {
   adminLogin,
   fetchTrackedPlayers,
   addTrackedPlayer,
+  updateTrackedPlayerRemark,
   removeTrackedPlayer,
   triggerStaggeredCheckAll,
   syncPlayerMatches
@@ -327,9 +373,13 @@ const nextHourlyScheduleTime = ref<string | null>(null);
 const loadingList = ref(false);
 
 const newAccountId = ref('');
+const newRemark = ref('');
 const adding = ref(false);
 const triggeringAll = ref(false);
 const syncingMap = ref<Record<number, boolean>>({});
+const editingRemarkId = ref<number | null>(null);
+const editingRemarkValue = ref('');
+const savingRemarkMap = ref<Record<number, boolean>>({});
 const statusBanner = ref<{ type: 'info' | 'error'; msg: string } | null>(null);
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
@@ -380,9 +430,10 @@ const loadTrackedPlayers = async () => {
   }
 };
 
-// 3. 新增关注玩家 ID
+// 3. 新增关注玩家 ID（支持同时保存备注）
 const handleAddPlayer = async () => {
   const idStr = newAccountId.value.trim();
+  const remarkStr = newRemark.value.trim();
   if (!/^\d+$/.test(idStr)) {
     statusBanner.value = { type: 'error', msg: '请输入纯数字 Steam32 玩家 ID（例如 199666669）' };
     return;
@@ -390,19 +441,50 @@ const handleAddPlayer = async () => {
   adding.value = true;
   statusBanner.value = null;
   try {
-    const res = await addTrackedPlayer(idStr);
+    const res = await addTrackedPlayer(idStr, remarkStr || undefined);
     newAccountId.value = '';
+    newRemark.value = '';
     const queued = res?.data?.queuedTasks ?? 0;
     const found = res?.data?.totalFound ?? 0;
     statusBanner.value = {
       type: 'info',
-      msg: `已成功添加关注 ID [${idStr}]！检索到近期比赛 ${found} 场，新增解析入队 ${queued} 场。`
+      msg: `已成功添加关注 ID [${idStr}]${remarkStr ? `（备注: ${remarkStr}）` : ''}！检索到近期比赛 ${found} 场，新增解析入队 ${queued} 场。`
     };
     await loadTrackedPlayers();
   } catch (e: any) {
     statusBanner.value = { type: 'error', msg: `添加关注 ID [${idStr}] 失败，请稍后重试` };
   } finally {
     adding.value = false;
+  }
+};
+
+// 3.1 编辑与保存玩家备注
+const startEditRemark = (p: any) => {
+  editingRemarkId.value = p.accountId;
+  editingRemarkValue.value = p.remark || '';
+};
+
+const cancelEditRemark = () => {
+  editingRemarkId.value = null;
+  editingRemarkValue.value = '';
+};
+
+const savePlayerRemark = async (accountId: number) => {
+  savingRemarkMap.value[accountId] = true;
+  try {
+    const val = editingRemarkValue.value.trim();
+    await updateTrackedPlayerRemark(accountId, val);
+    editingRemarkId.value = null;
+    editingRemarkValue.value = '';
+    statusBanner.value = {
+      type: 'info',
+      msg: val ? `已保存玩家 [${accountId}] 的备注为「${val}」` : `已清空玩家 [${accountId}] 的备注`
+    };
+    await loadTrackedPlayers();
+  } catch (e) {
+    statusBanner.value = { type: 'error', msg: `保存玩家 [${accountId}] 备注失败` };
+  } finally {
+    savingRemarkMap.value[accountId] = false;
   }
 };
 

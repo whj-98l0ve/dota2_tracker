@@ -12,6 +12,8 @@ public class DotaPlayerSummary {
     @TableId
     private Long accountId;
     private String personaname;
+    /** 管理员为玩家设置的备注名（如群昵称/真名） */
+    private String remark;
     private String avatar;
     private Integer rankTier;
     /** 冠绝一世天梯具体排名（如 698 表示冠绝698） */

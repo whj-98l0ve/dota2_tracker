@@ -4,9 +4,17 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.whj_98l0ve.dota2_tracker.entity.DotaPlayerSummary;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface DotaPlayerSummaryMapper extends BaseMapper<DotaPlayerSummary> {
+
+    /**
+     * 更新关注玩家的备注名称（允许置空）
+     */
+    @Update("UPDATE dota_player_summary SET remark = #{remark} WHERE account_id = #{accountId}")
+    int updatePlayerRemark(@Param("accountId") Long accountId, @Param("remark") String remark);
 
     @Insert("""
         INSERT INTO dota_player_summary (

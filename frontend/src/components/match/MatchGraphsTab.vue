@@ -171,7 +171,7 @@
       <!-- 选手开关图例胶囊 -->
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
         <button
-          v-for="(p, idx) in players"
+          v-for="p in players"
           :key="p.playerSlot"
           @click="togglePlayerSlot(p.playerSlot)"
           :class="[
@@ -181,56 +181,120 @@
           class="flex items-center justify-between px-2.5 py-1.5 rounded-xl border text-left transition-all"
         >
           <div class="flex items-center gap-2 min-w-0">
-            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: playerColors[idx % playerColors.length] }"></span>
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: getPlayerColor(p.playerSlot) }"></span>
             <img :src="getHeroAvatar(p.heroId)" class="w-7 h-5 rounded object-cover shrink-0" />
             <div class="truncate">
               <div class="text-[11px] font-bold text-slate-200 truncate">{{ getHeroName(p.heroId) }}</div>
               <div class="text-[9px] text-slate-500 font-mono truncate">{{ p.personaname }}</div>
             </div>
           </div>
-          <span class="text-[11px] font-mono font-bold text-amber-400 ml-1">
+          <span class="text-[11px] font-mono font-bold ml-1" :style="{ color: getPlayerColor(p.playerSlot) }">
             {{ getPlayerSeriesValue(p, playerHoverIdx).toLocaleString() }}
           </span>
         </button>
       </div>
 
-      <!-- 多人折线 SVG -->
-      <div v-if="maxSeriesLength > 1" class="mt-4 relative w-full h-80 bg-[#0b0e14]/90 rounded-xl border border-slate-800/80 p-4">
-        <svg
-          class="w-full h-full overflow-visible"
-          :viewBox="`0 0 ${svgW} ${svgH}`"
-          preserveAspectRatio="none"
-          @mousemove="onPlayerChartMove"
-          @mouseleave="playerHoverIndex = null"
-        >
-          <!-- 网格线 -->
-          <line v-for="g in [0.2, 0.4, 0.6, 0.8]" :key="g" :x1="0" :y1="svgH * g" :x2="svgW" :y2="svgH * g" stroke="#1e293b" stroke-dasharray="4 4" stroke-width="1" />
-          <text x="8" y="16" fill="#64748b" font-size="10" font-family="monospace">MAX: {{ maxPlayerMetricVal.toLocaleString() }}</text>
-          <text x="8" :y="svgH - 8" fill="#64748b" font-size="10" font-family="monospace">0 ({{ playerHoverIdx }}:00)</text>
+      <!-- 多人折线 SVG + 同步动态排序悬浮面板（仿赛事级分时数据浮窗） -->
+      <div
+        v-if="maxSeriesLength > 1"
+        class="mt-4 relative w-full h-96 bg-[#0b0e14]/95 rounded-xl border border-slate-800/80 pt-4 pb-8 pl-14 pr-4 select-none"
+      >
+        <!-- 左侧 Y 轴刻度标签 -->
+        <div class="absolute left-2 top-4 bottom-8 w-10 flex flex-col justify-between text-right text-[11px] font-mono text-slate-400 pointer-events-none">
+          <span>{{ formatAxisTick(maxPlayerMetricVal) }}</span>
+          <span>{{ formatAxisTick(maxPlayerMetricVal * 0.75) }}</span>
+          <span>{{ formatAxisTick(maxPlayerMetricVal * 0.5) }}</span>
+          <span>{{ formatAxisTick(maxPlayerMetricVal * 0.25) }}</span>
+          <span>0</span>
+        </div>
 
-          <!-- 每位选手的折线 -->
-          <g v-for="(p, idx) in players" :key="p.playerSlot">
-            <path
-              v-if="!hiddenSlots.has(p.playerSlot)"
-              :d="buildPlayerLinePath(p)"
-              fill="none"
-              :stroke="playerColors[idx % playerColors.length]"
-              :stroke-width="String(p.accountId) === String(highlightAccountId) ? 3.2 : 2"
-              stroke-linecap="round"
+        <!-- 底部 X 轴起止时间标签 -->
+        <div class="absolute left-14 right-4 bottom-2 flex justify-between text-[11px] font-mono text-slate-400 pointer-events-none">
+          <span>00:00</span>
+          <span>{{ String(Math.floor((maxSeriesLength - 1) / 2)).padStart(2, '0') }}:00</span>
+          <span>{{ String(maxSeriesLength - 1).padStart(2, '0') }}:00</span>
+        </div>
+
+        <div class="relative w-full h-full">
+          <svg
+            class="w-full h-full overflow-visible cursor-crosshair"
+            :viewBox="`0 0 ${svgW} ${svgH}`"
+            preserveAspectRatio="none"
+            @mousemove="onPlayerChartMove"
+            @mouseleave="playerHoverIndex = null"
+          >
+            <!-- 水平网格线 -->
+            <line v-for="g in [0, 0.25, 0.5, 0.75, 1]" :key="g" :x1="0" :y1="getPlayerY(maxPlayerMetricVal * (1 - g))" :x2="svgW" :y2="getPlayerY(maxPlayerMetricVal * (1 - g))" stroke="#1e293b" stroke-dasharray="4 4" stroke-width="1" />
+
+            <!-- 悬停指示竖线 -->
+            <line
+              :x1="getX(playerHoverIdx, maxSeriesLength)"
+              :y1="0"
+              :x2="getX(playerHoverIdx, maxSeriesLength)"
+              :y2="svgH"
+              stroke="#475569"
+              stroke-width="1.5"
             />
-          </g>
 
-          <!-- 悬停指示竖线 -->
-          <line
-            :x1="getX(playerHoverIdx, maxSeriesLength)"
-            :y1="0"
-            :x2="getX(playerHoverIdx, maxSeriesLength)"
-            :y2="svgH"
-            stroke="#38bdf8"
-            stroke-width="1"
-            stroke-dasharray="3 3"
-          />
-        </svg>
+            <!-- 每位选手的折线 -->
+            <g v-for="p in players" :key="p.playerSlot">
+              <path
+                v-if="!hiddenSlots.has(p.playerSlot)"
+                :d="buildPlayerLinePath(p)"
+                fill="none"
+                :stroke="getPlayerColor(p.playerSlot)"
+                :stroke-width="String(p.accountId) === String(highlightAccountId) ? 3.2 : 2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </g>
+
+            <!-- 悬停竖线与各条折线交点圆环 -->
+            <g v-for="p in players" :key="'dot-' + p.playerSlot">
+              <circle
+                v-if="!hiddenSlots.has(p.playerSlot)"
+                :cx="getX(playerHoverIdx, maxSeriesLength)"
+                :cy="getPlayerY(getPlayerSeriesValue(p, playerHoverIdx))"
+                r="4.5"
+                fill="#0b0e14"
+                :stroke="getPlayerColor(p.playerSlot)"
+                stroke-width="2.5"
+              />
+            </g>
+          </svg>
+
+          <!-- 跟随时间轴竖线的动态从高到低排序浮窗（英雄头像 + 当前数值 + 本分钟增量） -->
+          <div
+            v-if="sortedHoverPlayers.length > 0"
+            class="absolute top-2 z-20 pointer-events-none bg-[#0d1119]/95 backdrop-blur-md border border-slate-700/90 rounded-xl px-3 py-2.5 shadow-2xl min-w-[175px] transition-all duration-75"
+            :style="getFloatingTooltipStyle(playerHoverIdx, maxSeriesLength)"
+          >
+            <div class="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-200 pb-1.5 mb-1.5 border-b border-slate-800">
+              <span>🕒</span>
+              <span>{{ String(playerHoverIdx).padStart(2, '0') }}:00</span>
+            </div>
+            <div class="space-y-1 font-mono text-xs">
+              <div
+                v-for="item in sortedHoverPlayers"
+                :key="item.playerSlot"
+                class="flex items-center justify-between gap-3"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <img :src="getHeroAvatar(item.heroId)" class="w-6 h-4 rounded-sm object-cover border border-slate-700 shrink-0" />
+                  <span
+                    class="font-black text-[12px] tracking-tight"
+                    :style="{ color: item.color }"
+                  >
+                    {{ item.value.toLocaleString() }}
+                  </span>
+                </div>
+                <span class="text-[11px] text-slate-400 shrink-0">
+                  ({{ item.delta >= 0 ? item.delta.toLocaleString() : item.delta }})
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -419,20 +483,74 @@ const getPlayerSeriesValue = (p: any, idx: number): number => {
   const arr = getSeries(p);
   if (arr.length === 0) return 0;
   const safeIdx = Math.min(idx, arr.length - 1);
-  return arr[safeIdx] || 0;
+  return Number(arr[safeIdx] || 0);
+};
+
+// 根据选手在列表中的固定索引分配专属颜色，确保动态排序时颜色始终与折线一一对应
+const getPlayerColor = (playerSlot: number): string => {
+  const idx = props.players.findIndex((p) => p.playerSlot === playerSlot);
+  return playerColors[(idx >= 0 ? idx : 0) % playerColors.length];
+};
+
+const getPlayerY = (val: number): number => {
+  const maxVal = maxPlayerMetricVal.value || 1;
+  return Number((svgH - 8 - (val / maxVal) * (svgH - 20)).toFixed(1));
 };
 
 const buildPlayerLinePath = (p: any): string => {
   const arr = getSeries(p);
   if (arr.length === 0) return '';
-  const maxVal = maxPlayerMetricVal.value || 1;
   return arr
     .map((v, i) => {
       const x = getX(i, maxSeriesLength.value);
-      const y = Number((svgH - 12 - (v / maxVal) * (svgH - 28)).toFixed(1));
+      const y = getPlayerY(Number(v || 0));
       return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
     })
     .join(' ');
+};
+
+// 当前悬停分钟下，按数值从高到低实时排序的选手列表（含本分钟增量）
+const sortedHoverPlayers = computed(() => {
+  const idx = playerHoverIdx.value;
+  return props.players
+    .filter((p) => !hiddenSlots.value.has(p.playerSlot))
+    .map((p) => {
+      const val = getPlayerSeriesValue(p, idx);
+      const prevVal = idx > 0 ? getPlayerSeriesValue(p, idx - 1) : 0;
+      return {
+        playerSlot: p.playerSlot,
+        heroId: p.heroId,
+        personaname: p.personaname,
+        color: getPlayerColor(p.playerSlot),
+        value: val,
+        delta: val - prevVal
+      };
+    })
+    .sort((a, b) => b.value - a.value);
+});
+
+// Y 轴刻度格式化（如 34千 / 1.2万 或数字）
+const formatAxisTick = (val: number): string => {
+  const rounded = Math.round(val);
+  if (rounded >= 1000) {
+    return `${Math.round(rounded / 1000)}千`;
+  }
+  return String(rounded);
+};
+
+// 计算跟随竖线的浮窗位置（靠左时显示在竖线右侧，靠右时自动切到竖线左侧防止超出边界）
+const getFloatingTooltipStyle = (idx: number, totalLen: number) => {
+  const ratio = totalLen > 1 ? idx / (totalLen - 1) : 0;
+  const pct = Number((ratio * 100).toFixed(2));
+  if (ratio > 0.62) {
+    return {
+      left: `calc(${pct}% - 12px)`,
+      transform: 'translateX(-100%)'
+    };
+  }
+  return {
+    left: `calc(${pct}% + 12px)`
+  };
 };
 
 const onPlayerChartMove = (e: MouseEvent) => {

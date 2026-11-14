@@ -15,24 +15,13 @@
           </div>
         </div>
 
-        <!-- 搜索与数据模式切换 -->
-        <div class="flex items-center space-x-4">
-          <div class="relative">
-            <input 
-              v-model="inputAccountId" 
-              type="text" 
-              placeholder="搜索玩家 ID / 英雄 / 对局编号..." 
-              class="w-72 bg-[#121721] border border-slate-700/60 text-xs rounded-lg px-3 py-2 pl-8 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-slate-200 placeholder-slate-500 transition-all"
-              @keydown.enter="handleSearch"
-            />
-            <span class="absolute left-2.5 top-2 text-slate-500 text-xs">🔍</span>
-          </div>
-          <button 
-            @click="handleStartSync" 
-            :disabled="syncing"
-            class="px-3 py-1.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-lg text-xs font-semibold hover:bg-cyan-500/20 active:scale-95 transition-all disabled:opacity-50"
+        <!-- 顶部右侧：返回首页与状态标识 -->
+        <div class="flex items-center space-x-3">
+          <button
+            @click="router.push('/')"
+            class="px-3 py-1.5 bg-[#121721] hover:bg-slate-800 text-slate-300 border border-slate-700/80 rounded-lg text-xs transition-colors"
           >
-            {{ syncing ? '同步中...' : '录入/刷新' }}
+            ← 返回首页
           </button>
           <div class="flex items-center gap-1.5 text-xs text-slate-400 bg-[#121721] px-3 py-1.5 rounded-lg border border-slate-800">
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -59,7 +48,9 @@
           </div>
           <div>
             <div class="flex items-center gap-3">
-              <h1 class="text-2xl font-black text-white tracking-wide">{{ summary?.personaname || '未同步玩家' }}</h1>
+              <h1 class="text-2xl font-black text-white tracking-wide">
+                {{ summary?.personaname || '未同步玩家' }}<span v-if="summary?.remark" class="text-amber-400 text-lg font-bold ml-1">（{{ summary.remark }}）</span>
+              </h1>
               <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 数据库记录对局: {{ totalGamesInDb }} 场
@@ -627,12 +618,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, nextTick, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import heroConstants from '../assets/dota2_heroes_constants.json';
 import { getRankMeta } from '../utils/dotaHelper';
 import { 
-  syncPlayerMatches, fetchDashboardData, fetchTaskStatus,
+  fetchDashboardData,
   type PlayerSummary, type PlayerHeroStats, type RecentMatch, type TeammateSynergy 
 } from '../api/player';
 
@@ -641,9 +632,7 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
-const inputAccountId = ref(props.accountId || '182595756');
 const currentAccountId = ref(props.accountId || '182595756');
-const syncing = ref(false);
 const showRecentTable = ref(true);
 const showAllHeroes = ref(false);
 const allHeroesSectionRef = ref<HTMLElement | null>(null);
@@ -870,79 +859,12 @@ const openMatchDetail = (matchId: number) => {
   window.open(url, '_blank');
 };
 
-// 搜索框回车：切换路由并加载该玩家数据；若本地数据库尚无该玩家记录，自动触发 OpenDota 同步
-const handleSearch = async () => {
-  const targetId = inputAccountId.value.trim();
-  if (!targetId) return;
-  if (targetId !== currentAccountId.value) {
-    router.push({ name: 'PlayerDashboard', params: { accountId: targetId } });
-  } else {
-    await handleStartSync();
-  }
-};
-
-let pollTimer: ReturnType<typeof setInterval> | null = null;
-
-const stopPollingTasks = () => {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-};
-
-// 轮询后台录像解析进度，有新比赛入库时自动刷新看板数据
-const startPollingTasks = (accountId: string) => {
-  stopPollingTasks();
-  let lastSuccessCount = -1;
-  pollTimer = setInterval(async () => {
-    try {
-      const res = await fetchTaskStatus(accountId);
-      const pending = Number(res?.data?.pending || 0);
-      const success = Number(res?.data?.success || 0);
-      if (lastSuccessCount !== -1 && success > lastSuccessCount) {
-        await loadData();
-      }
-      lastSuccessCount = success;
-      if (pending === 0) {
-        await loadData();
-        stopPollingTasks();
-      }
-    } catch (e) {
-      stopPollingTasks();
-    }
-  }, 6000);
-};
-
-// 触发同步与加载
-const handleStartSync = async () => {
-  const accountId = inputAccountId.value.trim();
-  if (!accountId) return;
-
-  if (props.accountId !== accountId) {
-    router.push({ name: 'PlayerDashboard', params: { accountId } });
-  }
-  currentAccountId.value = accountId;
-  syncing.value = true;
-  try {
-    const syncRes = await syncPlayerMatches(accountId);
-    await loadData();
-    if (Number(syncRes?.data?.queuedTasks || 0) > 0) {
-      startPollingTasks(accountId);
-    }
-  } catch (err: any) {
-    console.error('同步异常，继续加载本地数据库', err);
-    await loadData();
-  } finally {
-    syncing.value = false;
-  }
-};
-
-const loadData = async (autoSyncIfEmpty = false) => {
+const loadData = async () => {
   if (!currentAccountId.value) return;
   try {
     const res = await fetchDashboardData(currentAccountId.value);
     if (res?.data) {
-      // 重置或更新当前玩家看板状态，避免搜索新 ID 时残留上一个玩家的数据
+      // 加载当前玩家的本地看板统计数据（玩家关注与同步由管理员后台统一管理）
       summary.value = res.data.summary || null;
       heroes.value = res.data.topHeroes || [];
       recentMatches.value = res.data.recentMatches || [];
@@ -950,11 +872,6 @@ const loadData = async (autoSyncIfEmpty = false) => {
       rawPositions.value = res.data.positionStats || [];
       rawParties.value = res.data.partyStats || [];
       rawFactions.value = res.data.factionStats || [];
-
-      // 若搜索的新 ID 在本地数据库中尚无记录，自动触发一次远程同步
-      if (autoSyncIfEmpty && !res.data.summary && (!res.data.recentMatches || res.data.recentMatches.length === 0)) {
-        await handleStartSync();
-      }
     }
   } catch (e) {
     console.error('加载本地看板数据失败', e);
@@ -962,19 +879,13 @@ const loadData = async (autoSyncIfEmpty = false) => {
 };
 
 onMounted(() => {
-  loadData(true);
-});
-
-onUnmounted(() => {
-  stopPollingTasks();
+  loadData();
 });
 
 watch(() => props.accountId, (newId) => {
   if (newId) {
-    stopPollingTasks();
     currentAccountId.value = newId;
-    inputAccountId.value = newId;
-    loadData(true);
+    loadData();
   }
 });
 </script>

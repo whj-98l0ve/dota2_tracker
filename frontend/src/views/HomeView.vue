@@ -131,7 +131,9 @@
                       />
                       <div class="min-w-0">
                         <div class="flex items-center gap-2">
-                          <span class="font-bold text-white text-sm truncate">{{ selectedPlayer.personaname || '未知玩家' }}</span>
+                          <span class="font-bold text-white text-sm truncate">
+                            {{ selectedPlayer.personaname || '未知玩家' }}<span v-if="selectedPlayer.remark" class="text-amber-400 font-semibold ml-0.5">（{{ selectedPlayer.remark }}）</span>
+                          </span>
                           <span
                             :class="getRankMeta(selectedPlayer.rankTier, selectedPlayer.leaderboardRank).colorClass"
                             class="text-[10px] px-1.5 py-0.2 rounded border font-mono font-bold shrink-0"
@@ -170,7 +172,9 @@
                         />
                         <div class="min-w-0">
                           <div class="flex items-center gap-2">
-                            <span class="font-bold text-white text-xs truncate">{{ p.personaname }}</span>
+                            <span class="font-bold text-white text-xs truncate">
+                              {{ p.personaname }}<span v-if="p.remark" class="text-amber-400 font-semibold ml-0.5">（{{ p.remark }}）</span>
+                            </span>
                             <span
                               :class="getRankMeta(p.rankTier, p.leaderboardRank).colorClass"
                               class="text-[10px] px-1.5 py-0.2 rounded border font-mono shrink-0"
@@ -455,6 +459,7 @@ interface DailyActivityItem {
 interface TrackedPlayerOption {
   accountId: number;
   personaname: string;
+  remark?: string | null;
   avatar: string;
   rankTier: number;
   leaderboardRank?: number | null;

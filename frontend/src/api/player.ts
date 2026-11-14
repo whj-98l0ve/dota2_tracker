@@ -1,13 +1,15 @@
 import axios from 'axios';
 
+// 使用相对路径 /api，配合 vite.config.ts 的 proxy 或 Nginx 反向代理自动转发到服务器后端 8088 端口
 const api = axios.create({
-  baseURL: 'http://localhost:8088/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 30000
 });
 
 export interface PlayerSummary {
   accountId: number;
   personaname: string;
+  remark?: string | null;
   avatar: string;
   rankTier: number;
   leaderboardRank?: number | null;
@@ -119,8 +121,12 @@ export const fetchTrackedPlayers = () => {
   return api.get('/admin/players');
 };
 
-export const addTrackedPlayer = (accountId: string) => {
-  return api.post(`/admin/players/${accountId}`);
+export const addTrackedPlayer = (accountId: string, remark?: string) => {
+  return api.post(`/admin/players/${accountId}`, remark ? { remark } : {});
+};
+
+export const updateTrackedPlayerRemark = (accountId: string | number, remark: string) => {
+  return api.post(`/admin/players/${accountId}/remark`, { remark });
 };
 
 export const removeTrackedPlayer = (accountId: string | number) => {
