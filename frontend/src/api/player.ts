@@ -10,6 +10,9 @@ export interface PlayerSummary {
   personaname: string;
   avatar: string;
   rankTier: number;
+  leaderboardRank?: number | null;
+  isTracked?: number;
+  lastSyncAt?: string;
   totalMatches: number;
   totalWins: number;
   winRate: number;
@@ -35,15 +38,26 @@ export interface PlayerHeroStats {
   wins: number;
   losses: number;
   winRate: number;
-  avgKills: number;
-  avgDeaths: number;
-  avgAssists: number;
-  kda: number;
+  kda?: number;
+  radiantMatches?: number;
+  radiantWins?: number;
+  radiantWinRate?: number;
+  direMatches?: number;
+  direWins?: number;
+  direWinRate?: number;
+  laneWinCount?: number;
+  laneEvenCount?: number;
+  laneLossCount?: number;
   laneWinRate: number;
+  laneEvenRate?: number;
   laneLossRate: number;
-  avgGpm: number;
-  avgXpm: number;
-  perfScore: number;
+  lastPlayedTime?: number;
+  avgKills?: number;
+  avgDeaths?: number;
+  avgAssists?: number;
+  avgGpm?: number;
+  avgXpm?: number;
+  perfScore?: number;
 }
 
 export interface RecentMatch {
@@ -74,6 +88,10 @@ export const syncPlayerMatches = (accountId: string) => {
   return api.post(`/player/${accountId}/sync`);
 };
 
+export const fetchHomeOverview = () => {
+  return api.get('/player/home');
+};
+
 export const fetchTaskStatus = (accountId: string) => {
   return api.get(`/player/${accountId}/tasks`);
 };
@@ -89,4 +107,26 @@ export const fetchAllMatches = (accountId: string) => {
 // 查询单场比赛高精详情数据 (对应后端 /api/player/match/{matchId})
 export const fetchMatchDetail = (matchId: string) => {
   return api.get(`/player/match/${matchId}`);
+};
+
+// ================= 管理员关注玩家与定时同步相关接口 =================
+
+export const adminLogin = (username: string, password: string) => {
+  return api.post('/admin/login', { username, password });
+};
+
+export const fetchTrackedPlayers = () => {
+  return api.get('/admin/players');
+};
+
+export const addTrackedPlayer = (accountId: string) => {
+  return api.post(`/admin/players/${accountId}`);
+};
+
+export const removeTrackedPlayer = (accountId: string | number) => {
+  return api.delete(`/admin/players/${accountId}`);
+};
+
+export const triggerStaggeredCheckAll = () => {
+  return api.post('/admin/check-all');
 };

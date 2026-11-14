@@ -53,8 +53,8 @@
               :src="summary?.avatar || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=120'" 
               class="w-20 h-20 rounded-2xl border-2 border-slate-700/80 object-cover shadow-md"
             />
-            <span class="absolute -bottom-2 -left-2 px-2 py-0.5 rounded text-[10px] font-black tracking-wider bg-amber-500 text-black shadow-md flex items-center gap-0.5">
-              👑 Rank {{ summary?.rankTier || 0 }}
+            <span class="absolute -bottom-2 -left-2 px-2 py-0.5 rounded text-[10px] font-black tracking-wider bg-amber-500 text-black shadow-md flex items-center gap-0.5 whitespace-nowrap">
+              👑 {{ rankBadgeText }}
             </span>
           </div>
           <div>
@@ -358,62 +358,264 @@
         </div>
       </section>
 
-      <!-- 4. 战绩流水明细 -->
-      <section class="bg-[#121721] border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
-          <div class="flex items-center gap-3">
-            <span class="text-base font-bold text-white">本地高精度对局流水</span>
-            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">已入库 {{ recentMatches.length }} 场</span>
+      <!-- 4. 紧凑战绩流水明细 (左) + 常用英雄 Top 10 (右) -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- 左列：紧凑版平铺本地高精度对局流水 -->
+        <div class="lg:col-span-7 bg-[#121721] border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800/80">
+            <div class="flex items-center gap-2.5">
+              <span class="text-sm font-bold text-white flex items-center gap-1.5">
+                <span class="text-cyan-400">⚡</span> 本地高精度对局流水
+              </span>
+              <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+                近 {{ recentMatches.length }} 场
+              </span>
+            </div>
+            <div class="flex items-center gap-3">
+              <a 
+                :href="'/player/' + currentAccountId + '/history'" 
+                target="_blank" 
+                class="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 group transition-colors"
+              >
+                查看全部战绩
+                <span class="group-hover:translate-x-0.5 transition-transform">→</span>
+              </a>
+              <button @click="showRecentTable = !showRecentTable" class="text-xs text-slate-400 hover:text-slate-300">
+                {{ showRecentTable ? '折叠' : '展开' }}
+              </button>
+            </div>
           </div>
-          <div class="flex items-center gap-4">
-            <a 
-              :href="'/player/' + currentAccountId + '/history'" 
-              target="_blank" 
-              class="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 group transition-colors"
-            >
-              查看全部战绩
-              <span class="group-hover:translate-x-0.5 transition-transform">→</span>
-            </a>
-            <button @click="showRecentTable = !showRecentTable" class="text-xs text-slate-400 hover:text-slate-300">
-              {{ showRecentTable ? '折叠' : '展开' }}
-            </button>
+
+          <div v-show="showRecentTable" class="mt-2.5 overflow-x-auto">
+            <table class="w-full text-left text-[11px] font-mono">
+              <thead class="bg-[#0b0e14] text-slate-400 border-b border-slate-800">
+                <tr>
+                  <th class="py-1.5 px-2">对局ID</th>
+                  <th class="py-1.5 px-2">英雄</th>
+                  <th class="py-1.5 px-2 text-center">结果</th>
+                  <th class="py-1.5 px-2">K/D/A</th>
+                  <th class="py-1.5 px-2 text-center">对线</th>
+                  <th class="py-1.5 px-2 text-right">GPM/XPM</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/50">
+                <tr
+                  v-for="m in recentMatches"
+                  :key="m.matchId"
+                  class="hover:bg-[#151c2a] cursor-pointer group transition-colors"
+                  @click="openMatchDetail(m.matchId)"
+                >
+                  <td class="py-1.5 px-2 text-slate-500 group-hover:text-cyan-400 transition-colors">{{ m.matchId }}</td>
+                  <td class="py-1.5 px-2 font-bold text-white">
+                    <div class="flex items-center gap-1.5">
+                      <img :src="getHeroAvatar(m.heroId)" class="w-6 h-3.5 rounded object-cover shrink-0" @error="handleImgError" />
+                      <span class="truncate max-w-[88px]">{{ getHeroName(m.heroId) }}</span>
+                    </div>
+                  </td>
+                  <td class="py-1.5 px-2 text-center">
+                    <span
+                      :class="m.win ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                    >
+                      {{ m.win ? '胜' : '负' }}
+                    </span>
+                  </td>
+                  <td class="py-1.5 px-2 text-slate-200">{{ m.kills }}/{{ m.deaths }}/{{ m.assists }}</td>
+                  <td class="py-1.5 px-2 text-center">
+                    <span :class="m.laneResult === 1 ? 'text-emerald-400' : m.laneResult === 3 ? 'text-rose-400' : 'text-amber-400'">
+                      {{ m.laneResult === 1 ? '线优' : m.laneResult === 3 ? '线劣' : '均势' }}
+                    </span>
+                  </td>
+                  <td class="py-1.5 px-2 text-right text-amber-400">{{ m.goldPerMin }}/{{ m.xpPerMin }}</td>
+                </tr>
+                <tr v-if="recentMatches.length === 0">
+                  <td colspan="6" class="py-6 text-center text-slate-500">本地数据库暂无已解析比赛</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div v-show="showRecentTable" class="mt-4 overflow-x-auto">
+        <!-- 右列：常用英雄 Top 10（按使用场次从高到低排序，显示场次与胜率，支持展开全部英雄记录） -->
+        <div class="lg:col-span-5 bg-[#121721] border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800/80">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-bold text-white flex items-center gap-1.5">
+                <span class="text-amber-400">🔥</span> 常用英雄池 (Top 10)
+              </span>
+              <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+                共使用 {{ sortedHeroes.length }} 个
+              </span>
+            </div>
+            <button
+              v-if="sortedHeroes.length > 0"
+              @click="toggleAllHeroes"
+              class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1 transition-colors"
+            >
+              <span>{{ showAllHeroes ? '收起全部英雄' : `展开全部 (${sortedHeroes.length})` }}</span>
+              <span>{{ showAllHeroes ? '↑' : '↓' }}</span>
+            </button>
+          </div>
+
+          <div class="mt-2.5 overflow-x-auto">
+            <table class="w-full text-left text-[11px] font-mono">
+              <thead class="bg-[#0b0e14] text-slate-400 border-b border-slate-800">
+                <tr>
+                  <th class="py-1.5 px-2">英雄</th>
+                  <th class="py-1.5 px-2 text-center">使用场次</th>
+                  <th class="py-1.5 px-2 text-right">胜率</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/50">
+                <tr
+                  v-for="(h, idx) in top10Heroes"
+                  :key="h.heroId"
+                  class="hover:bg-[#151c2a] transition-colors"
+                >
+                  <td class="py-1.5 px-2">
+                    <div class="flex items-center gap-2">
+                      <span class="w-4 text-[10px] text-slate-500 text-right">{{ idx + 1 }}</span>
+                      <img :src="getHeroAvatar(h.heroId)" class="w-6 h-3.5 rounded object-cover shrink-0" @error="handleImgError" />
+                      <span class="font-bold text-white truncate max-w-[95px]">{{ getHeroName(h.heroId) }}</span>
+                    </div>
+                  </td>
+                  <td class="py-1.5 px-2 text-center">
+                    <div class="flex flex-col items-center">
+                      <span class="text-white font-bold">{{ h.matches }} 场</span>
+                      <div class="w-16 bg-slate-800 h-1 rounded-full overflow-hidden mt-0.5">
+                        <div
+                          class="bg-cyan-400 h-full rounded-full"
+                          :style="{ width: Math.min(100, (h.matches / maxHeroMatches) * 100) + '%' }"
+                        ></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-1.5 px-2 text-right">
+                    <div class="inline-flex flex-col items-end">
+                      <span :class="Number(h.winRate) >= 50 ? 'text-emerald-400' : 'text-rose-400'" class="font-bold">
+                        {{ h.winRate }}%
+                      </span>
+                      <div class="w-16 bg-slate-800 h-1 rounded-full overflow-hidden mt-0.5">
+                        <div
+                          :class="Number(h.winRate) >= 50 ? 'bg-emerald-400' : 'bg-rose-500'"
+                          class="h-full rounded-full"
+                          :style="{ width: Math.min(100, Number(h.winRate || 0)) + '%' }"
+                        ></div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-if="top10Heroes.length === 0">
+                  <td colspan="3" class="py-6 text-center text-slate-500">暂无英雄使用记录</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. 展开查看所有使用过的英雄完整记录（按场次从高到低排序：场次、胜率、天辉胜率、夜魇胜率、线优/均势/线劣分布、最近一场比赛时间） -->
+      <section
+        v-if="showAllHeroes"
+        ref="allHeroesSectionRef"
+        class="bg-[#121721] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl transition-all"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+          <div>
+            <div class="flex items-center gap-2.5">
+              <span class="text-base font-bold text-white flex items-center gap-2">
+                <span class="text-amber-400">📊</span> 全部使用英雄深度战绩档案
+              </span>
+              <span class="text-xs px-2.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50 font-mono">
+                共 {{ sortedHeroes.length }} 个英雄 · 按场次从高到低排序
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">
+              涵盖使用场次、总胜率、天辉/夜魇阵营胜率、对线期（线优 / 均势 / 线劣）分布及最近一场比赛时间
+            </p>
+          </div>
+          <button
+            @click="showAllHeroes = false"
+            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+          >
+            ✕ 收起列表
+          </button>
+        </div>
+
+        <div class="mt-4 overflow-x-auto">
           <table class="w-full text-left text-xs font-mono">
             <thead class="bg-[#0b0e14] text-slate-400 border-b border-slate-800">
               <tr>
-                <th class="py-2.5 px-3">对局ID</th>
-                <th class="py-2.5 px-3">英雄</th>
-                <th class="py-2.5 px-3">结果</th>
-                <th class="py-2.5 px-3">K / D / A</th>
-                <th class="py-2.5 px-3">分路/结果</th>
-                <th class="py-2.5 px-3">GPM / XPM</th>
+                <th class="py-3 px-3">#</th>
+                <th class="py-3 px-3">英雄</th>
+                <th class="py-3 px-3 text-center">使用场次 (胜/负)</th>
+                <th class="py-3 px-3 text-center">总胜率</th>
+                <th class="py-3 px-3 text-center">天辉胜率 (场次)</th>
+                <th class="py-3 px-3 text-center">夜魇胜率 (场次)</th>
+                <th class="py-3 px-4 min-w-[230px]">对线期分布 (线优 / 均势 / 线劣)</th>
+                <th class="py-3 px-3 text-right">最近一场比赛时间</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60">
-              <tr v-for="m in recentMatches" :key="m.matchId" class="hover:bg-[#151c2a] cursor-pointer group" @click="openMatchDetail(m.matchId)">
-                <td class="py-2.5 px-3 text-slate-500 group-hover:text-cyan-400 transition-colors">{{ m.matchId }}</td>
-                <td class="py-2.5 px-3 font-bold text-white flex items-center gap-2">
-                  <img :src="getHeroAvatar(m.heroId)" class="w-6 h-4 rounded object-cover" @error="handleImgError" />
-                  <span>{{ getHeroName(m.heroId) }}</span>
-                </td>
+              <tr
+                v-for="(h, idx) in sortedHeroes"
+                :key="h.heroId"
+                class="hover:bg-[#151c2a] transition-colors"
+              >
+                <td class="py-2.5 px-3 text-slate-500">{{ idx + 1 }}</td>
                 <td class="py-2.5 px-3">
-                  <span :class="m.win ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'" class="px-2 py-0.5 rounded font-bold">
-                    {{ m.win ? '胜利' : '失败' }}
+                  <div class="flex items-center gap-2.5">
+                    <img :src="getHeroAvatar(h.heroId)" class="w-8 h-5 rounded border border-slate-700 object-cover" @error="handleImgError" />
+                    <span class="font-bold text-white">{{ getHeroName(h.heroId) }}</span>
+                  </div>
+                </td>
+                <td class="py-2.5 px-3 text-center">
+                  <span class="text-white font-bold">{{ h.matches }} 场</span>
+                  <span class="text-[11px] text-slate-400 ml-1">
+                    (<span class="text-emerald-400">{{ h.wins ?? 0 }}W</span>/<span class="text-rose-400">{{ h.losses ?? (h.matches - (h.wins || 0)) }}L</span>)
                   </span>
                 </td>
-                <td class="py-2.5 px-3">{{ m.kills }}/{{ m.deaths }}/{{ m.assists }}</td>
-                <td class="py-2.5 px-3">
-                  <span :class="m.laneResult === 1 ? 'text-emerald-400' : m.laneResult === 3 ? 'text-rose-400' : 'text-amber-400'">
-                    {{ m.laneResult === 1 ? '线优' : m.laneResult === 3 ? '线劣' : '均势' }}
+                <td class="py-2.5 px-3 text-center">
+                  <span
+                    :class="Number(h.winRate) >= 50 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20'"
+                    class="px-2 py-0.5 rounded border font-bold"
+                  >
+                    {{ h.winRate }}%
                   </span>
                 </td>
-                <td class="py-2.5 px-3 text-amber-400">{{ m.goldPerMin }} / {{ m.xpPerMin }}</td>
-              </tr>
-              <tr v-if="recentMatches.length === 0">
-                <td colspan="6" class="py-4 text-center text-slate-500">本地数据库暂无已解析比赛</td>
+                <td class="py-2.5 px-3 text-center">
+                  <template v-if="Number(h.radiantMatches || 0) > 0">
+                    <span :class="Number(h.radiantWinRate) >= 50 ? 'text-emerald-400' : 'text-rose-400'" class="font-bold">
+                      {{ h.radiantWinRate }}%
+                    </span>
+                    <span class="text-[10px] text-slate-500 ml-1">({{ h.radiantWins || 0 }}/{{ h.radiantMatches }}场)</span>
+                  </template>
+                  <span v-else class="text-slate-600">-</span>
+                </td>
+                <td class="py-2.5 px-3 text-center">
+                  <template v-if="Number(h.direMatches || 0) > 0">
+                    <span :class="Number(h.direWinRate) >= 50 ? 'text-emerald-400' : 'text-rose-400'" class="font-bold">
+                      {{ h.direWinRate }}%
+                    </span>
+                    <span class="text-[10px] text-slate-500 ml-1">({{ h.direWins || 0 }}/{{ h.direMatches }}场)</span>
+                  </template>
+                  <span v-else class="text-slate-600">-</span>
+                </td>
+                <td class="py-2.5 px-4">
+                  <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex gap-0.5 mb-1">
+                    <div class="bg-emerald-400 h-full" :style="{ width: getHeroLaneDist(h).winPct + '%' }"></div>
+                    <div class="bg-amber-400 h-full" :style="{ width: getHeroLaneDist(h).evenPct + '%' }"></div>
+                    <div class="bg-rose-500 h-full" :style="{ width: getHeroLaneDist(h).lossPct + '%' }"></div>
+                  </div>
+                  <div class="flex justify-between text-[10px] text-slate-400">
+                    <span class="text-emerald-400">优 {{ getHeroLaneDist(h).winPct }}%({{ getHeroLaneDist(h).winCount }})</span>
+                    <span class="text-amber-400">均 {{ getHeroLaneDist(h).evenPct }}%({{ getHeroLaneDist(h).evenCount }})</span>
+                    <span class="text-rose-400">劣 {{ getHeroLaneDist(h).lossPct }}%({{ getHeroLaneDist(h).lossCount }})</span>
+                  </div>
+                </td>
+                <td class="py-2.5 px-3 text-right text-slate-300">
+                  {{ formatMatchTime(h.lastPlayedTime) }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -425,9 +627,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import heroConstants from '../assets/dota2_heroes_constants.json';
+import { getRankMeta } from '../utils/dotaHelper';
 import { 
   syncPlayerMatches, fetchDashboardData, fetchTaskStatus,
   type PlayerSummary, type PlayerHeroStats, type RecentMatch, type TeammateSynergy 
@@ -442,11 +645,66 @@ const inputAccountId = ref(props.accountId || '182595756');
 const currentAccountId = ref(props.accountId || '182595756');
 const syncing = ref(false);
 const showRecentTable = ref(true);
+const showAllHeroes = ref(false);
+const allHeroesSectionRef = ref<HTMLElement | null>(null);
 
 const summary = ref<PlayerSummary | null>(null);
 const heroes = ref<PlayerHeroStats[]>([]);
 const recentMatches = ref<RecentMatch[]>([]);
 const teammates = ref<TeammateSynergy[]>([]);
+
+// 按英雄使用场次由高到低排序的全量英雄记录与前 10 个常用英雄
+const sortedHeroes = computed(() => {
+  return [...heroes.value].sort((a, b) => {
+    const diff = Number(b.matches || 0) - Number(a.matches || 0);
+    if (diff !== 0) return diff;
+    return Number(b.winRate || 0) - Number(a.winRate || 0);
+  });
+});
+
+const top10Heroes = computed(() => sortedHeroes.value.slice(0, 10));
+
+const maxHeroMatches = computed(() => {
+  if (sortedHeroes.value.length === 0) return 1;
+  return Math.max(1, Number(sortedHeroes.value[0]?.matches || 1));
+});
+
+const toggleAllHeroes = async () => {
+  showAllHeroes.value = !showAllHeroes.value;
+  if (showAllHeroes.value) {
+    await nextTick();
+    allHeroesSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
+
+// 计算某英雄的线优、均势、线劣分布（占比与场次）
+const getHeroLaneDist = (h: PlayerHeroStats) => {
+  const total = Math.max(1, Number(h.matches || 0));
+  const winCount = h.laneWinCount !== undefined ? Number(h.laneWinCount) : Math.round((Number(h.laneWinRate || 0) / 100) * total);
+  const lossCount = h.laneLossCount !== undefined ? Number(h.laneLossCount) : Math.round((Number(h.laneLossRate || 0) / 100) * total);
+  const evenCount = h.laneEvenCount !== undefined ? Number(h.laneEvenCount) : Math.max(0, total - winCount - lossCount);
+
+  const winPct = h.laneWinRate !== undefined ? Number(h.laneWinRate) : Number(((winCount * 100.0) / total).toFixed(1));
+  const lossPct = h.laneLossRate !== undefined ? Number(h.laneLossRate) : Number(((lossCount * 100.0) / total).toFixed(1));
+  const evenPct = h.laneEvenRate !== undefined
+    ? Number(h.laneEvenRate)
+    : Number(Math.max(0, 100 - winPct - lossPct).toFixed(1));
+
+  return { winCount, evenCount, lossCount, winPct, evenPct, lossPct };
+};
+
+// 格式化最近一场比赛时间戳（秒）
+const formatMatchTime = (epochSec?: number) => {
+  if (!epochSec || Number(epochSec) <= 0) return '-';
+  const d = new Date(Number(epochSec) * 1000);
+  if (isNaN(d.getTime())) return '-';
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+};
 
 // 后端聚合的真实本地统计
 const rawPositions = ref<any[]>([]);
@@ -472,6 +730,11 @@ const handleImgError = (e: Event) => {
 
 // 1. 本地总场次
 const totalGamesInDb = computed(() => summary.value?.totalMatches || recentMatches.value.length || 0);
+
+// 玩家天梯段位与冠绝排名展示文本 (例如 199666669 显示为 冠绝698)
+const rankBadgeText = computed(() => {
+  return getRankMeta(summary.value?.rankTier, summary.value?.leaderboardRank).shortLabel;
+});
 
 // 2. 本地线劣率推算
 const laneLossRate = computed(() => {
@@ -607,9 +870,14 @@ const openMatchDetail = (matchId: number) => {
   window.open(url, '_blank');
 };
 
-const handleSearch = () => {
-  if (inputAccountId.value.trim()) {
-    router.push({ name: 'PlayerDashboard', params: { accountId: inputAccountId.value.trim() } });
+// 搜索框回车：切换路由并加载该玩家数据；若本地数据库尚无该玩家记录，自动触发 OpenDota 同步
+const handleSearch = async () => {
+  const targetId = inputAccountId.value.trim();
+  if (!targetId) return;
+  if (targetId !== currentAccountId.value) {
+    router.push({ name: 'PlayerDashboard', params: { accountId: targetId } });
+  } else {
+    await handleStartSync();
   }
 };
 
@@ -650,6 +918,9 @@ const handleStartSync = async () => {
   const accountId = inputAccountId.value.trim();
   if (!accountId) return;
 
+  if (props.accountId !== accountId) {
+    router.push({ name: 'PlayerDashboard', params: { accountId } });
+  }
   currentAccountId.value = accountId;
   syncing.value = true;
   try {
@@ -666,18 +937,24 @@ const handleStartSync = async () => {
   }
 };
 
-const loadData = async () => {
+const loadData = async (autoSyncIfEmpty = false) => {
   if (!currentAccountId.value) return;
   try {
     const res = await fetchDashboardData(currentAccountId.value);
     if (res?.data) {
-      if (res.data.summary) summary.value = res.data.summary;
-      if (res.data.topHeroes) heroes.value = res.data.topHeroes;
-      if (res.data.recentMatches) recentMatches.value = res.data.recentMatches;
-      if (res.data.teammates) teammates.value = res.data.teammates;
-      if (res.data.positionStats) rawPositions.value = res.data.positionStats;
-      if (res.data.partyStats) rawParties.value = res.data.partyStats;
-      if (res.data.factionStats) rawFactions.value = res.data.factionStats;
+      // 重置或更新当前玩家看板状态，避免搜索新 ID 时残留上一个玩家的数据
+      summary.value = res.data.summary || null;
+      heroes.value = res.data.topHeroes || [];
+      recentMatches.value = res.data.recentMatches || [];
+      teammates.value = res.data.teammates || [];
+      rawPositions.value = res.data.positionStats || [];
+      rawParties.value = res.data.partyStats || [];
+      rawFactions.value = res.data.factionStats || [];
+
+      // 若搜索的新 ID 在本地数据库中尚无记录，自动触发一次远程同步
+      if (autoSyncIfEmpty && !res.data.summary && (!res.data.recentMatches || res.data.recentMatches.length === 0)) {
+        await handleStartSync();
+      }
     }
   } catch (e) {
     console.error('加载本地看板数据失败', e);
@@ -685,7 +962,7 @@ const loadData = async () => {
 };
 
 onMounted(() => {
-  loadData();
+  loadData(true);
 });
 
 onUnmounted(() => {
@@ -697,7 +974,7 @@ watch(() => props.accountId, (newId) => {
     stopPollingTasks();
     currentAccountId.value = newId;
     inputAccountId.value = newId;
-    loadData();
+    loadData(true);
   }
 });
 </script>

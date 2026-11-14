@@ -1,12 +1,31 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import HomeView from '../views/HomeView.vue';
 import PlayerDashboard from '../views/PlayerDashboard.vue';
 import MatchHistory from '../views/MatchHistory.vue';
 import MatchDetail from '../views/MatchDetail.vue';
+import AdminDashboard from '../views/AdminDashboard.vue';
+import SpecialThanks from '../views/SpecialThanks.vue';
 
 const routes = [
   {
     path: '/',
-    redirect: '/player/199666669' // Default to a demo ID or a landing page
+    name: 'Home',
+    component: HomeView
+  },
+  {
+    path: '/special-thanks',
+    name: 'SpecialThanks',
+    component: SpecialThanks
+  },
+  {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: AdminDashboard
+  },
+  {
+    path: '/player/:accountId/admin',
+    name: 'PlayerAdminDashboard',
+    component: AdminDashboard
   },
   {
     path: '/player/:accountId',

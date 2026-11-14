@@ -17,6 +17,7 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Slf4j
 @Service
@@ -32,6 +33,15 @@ public class OpenDotaService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
+     * 每小时定时巡检的关注玩家错峰队列：
+     * 每隔 1 小时将所有 is_tracked = 1 的玩家 ID 放入此队列，再由消费定时器每隔 20 秒取出 1 个玩家单独请求，
+     * 严格避免多个关注玩家同时并发请求 OpenDota 导致限流或报错。
+     */
+    private final Queue<Long> hourlySyncQueue = new ConcurrentLinkedQueue<>();
+    private volatile LocalDateTime lastHourlyScheduleTime = null;
+    private volatile LocalDateTime nextHourlyScheduleTime = LocalDateTime.now().plusHours(1);
+
+    /**
      * 1. 用户触发录入同步：拉取近 7 天列表，筛选并建立高精度录像抓取任务
      */
     public Map<String, Object> syncPlayerRecentMatches(Long accountId) {
@@ -40,11 +50,19 @@ public class OpenDotaService {
         // 1. 同步玩家基本资料（只存头像和昵称）
         syncPlayerProfile(accountId);
 
-        // 2. 调用 OpenDota 获取比赛列表
+        // 2. 调用 OpenDota 获取比赛列表：优先请求 7 天内比赛记录 (?date=7)，避免全量拉取触发 OpenDota 500 错误；
+        //    若 7 天内记录请求也报错或返回非数组，则自动降级请求 recentMatches 接口
+        boolean usedRecentMatchesFallback = false;
         JsonNode matchesArray = openDotaClient.get("/players/" + accountId + "/matches?date=7");
 
+        if (matchesArray == null || !matchesArray.isArray() || matchesArray.has("error")) {
+            log.warn("⚠️ 获取玩家 [{}] 7天内比赛记录 (matches?date=7) 报错或为空，自动降级请求 recentMatches 接口...", accountId);
+            matchesArray = openDotaClient.get("/players/" + accountId + "/recentMatches");
+            usedRecentMatchesFallback = true;
+        }
+
         if (matchesArray == null || !matchesArray.isArray()) {
-            log.warn("⚠️ 获取玩家 [{}] 近期比赛列表网络超时，直接降级读取本地", accountId);
+            log.warn("⚠️ 获取玩家 [{}] 近期比赛列表失败 (matches?date=7 与 recentMatches 均异常)，直接降级读取本地", accountId);
             result.put("totalFound", 0);
             result.put("alreadyInDb", 0);
             result.put("queuedTasks", 0);
@@ -64,8 +82,8 @@ public class OpenDotaService {
             long matchId = m.path("match_id").asLong();
             long startTime = m.path("start_time").asLong(0);
 
-            // 超出 7 天截断退出
-            if (startTime < exactSevenDaysAgo) {
+            // 若使用的是 matches?date=7 接口，超出 7 天截断退出；若已降级为 recentMatches，则保留 recentMatches 返回的近期记录
+            if (!usedRecentMatchesFallback && startTime > 0 && startTime < exactSevenDaysAgo) {
                 break;
             }
 
@@ -455,15 +473,136 @@ public class OpenDotaService {
                 if (s == null) {
                     s = new DotaPlayerSummary();
                     s.setAccountId(accountId);
+                    s.setIsTracked(0);
                 }
                 s.setPersonaname(profile.path("personaname").asText("Player#" + accountId));
                 s.setAvatar(profile.path("avatarfull").asText(""));
                 s.setRankTier(root.path("rank_tier").asInt(0));
+                // 提取冠绝一世天梯排名（如 leaderboard_rank: 698 -> 冠绝698）
+                int lbRank = (root.has("leaderboard_rank") && !root.get("leaderboard_rank").isNull())
+                        ? root.path("leaderboard_rank").asInt(0) : 0;
+                s.setLeaderboardRank(lbRank > 0 ? lbRank : null);
+                s.setLastSyncAt(LocalDateTime.now());
                 summaryMapper.insertOrUpdate(s);
             }
         } catch (Exception e) {
             log.warn("获取玩家头像资料失败 accountId={}: {}", accountId, e.getMessage());
         }
+    }
+
+    /**
+     * 4. 每 1 小时将所有已关注玩家 (is_tracked = 1) 排入错峰同步队列（绝不并发一起发起请求）
+     */
+    @Scheduled(fixedRate = 3600000, initialDelay = 60000)
+    public void scheduleHourlyTrackedPlayersCheck() {
+        lastHourlyScheduleTime = LocalDateTime.now();
+        nextHourlyScheduleTime = lastHourlyScheduleTime.plusHours(1);
+
+        List<DotaPlayerSummary> trackedList = summaryMapper.selectList(
+                new LambdaQueryWrapper<DotaPlayerSummary>().eq(DotaPlayerSummary::getIsTracked, 1)
+        );
+        if (trackedList == null || trackedList.isEmpty()) {
+            return;
+        }
+        int added = 0;
+        for (DotaPlayerSummary p : trackedList) {
+            if (p.getAccountId() != null && !hourlySyncQueue.contains(p.getAccountId())) {
+                hourlySyncQueue.offer(p.getAccountId());
+                added++;
+            }
+        }
+        log.info("⏰ [每小时定时巡检] 已将 {} 名关注玩家加入错峰检查队列，将逐个间隔请求 OpenDota...", added);
+    }
+
+    /**
+     * 5. 错峰消费关注玩家巡检队列：每 20 秒仅取 1 个关注玩家向 OpenDota 检查是否有新比赛，避免并发请求引发报错
+     */
+    @Scheduled(fixedDelay = 20000, initialDelay = 20000)
+    public void consumeTrackedPlayerSyncQueue() {
+        Long accountId = hourlySyncQueue.poll();
+        if (accountId == null) {
+            return;
+        }
+        DotaPlayerSummary summary = summaryMapper.selectById(accountId);
+        if (summary != null && Integer.valueOf(1).equals(summary.getIsTracked())) {
+            log.info("🔍 [关注玩家错峰巡检] 正在检查玩家 [{}] 是否有新比赛 (队列剩余: {})...", accountId, hourlySyncQueue.size());
+            Map<String, Object> syncRes = syncPlayerRecentMatches(accountId);
+            log.info("✅ [关注玩家错峰巡检] 玩家 [{}] 检查完毕: 发现近期比赛={}, 已在库={}, 新增入队={}",
+                    accountId, syncRes.get("totalFound"), syncRes.get("alreadyInDb"), syncRes.get("queuedTasks"));
+        }
+    }
+
+    /**
+     * 管理员接口：获取所有被关注的玩家列表及定时巡检状态
+     */
+    public Map<String, Object> getTrackedPlayersStatus() {
+        List<DotaPlayerSummary> trackedPlayers = summaryMapper.selectList(
+                new LambdaQueryWrapper<DotaPlayerSummary>()
+                        .eq(DotaPlayerSummary::getIsTracked, 1)
+                        .orderByDesc(DotaPlayerSummary::getUpdatedAt)
+        );
+        Map<String, Object> res = new HashMap<>();
+        res.put("players", trackedPlayers);
+        res.put("queueSize", hourlySyncQueue.size());
+        res.put("queuedIds", new ArrayList<>(hourlySyncQueue));
+        res.put("lastHourlyScheduleTime", lastHourlyScheduleTime);
+        res.put("nextHourlyScheduleTime", nextHourlyScheduleTime);
+        return res;
+    }
+
+    /**
+     * 管理员接口：新增关注的玩家 ID，并立即触发一次同步或加入错峰队列
+     */
+    public Map<String, Object> addTrackedPlayer(Long accountId) {
+        DotaPlayerSummary existing = summaryMapper.selectById(accountId);
+        if (existing == null) {
+            existing = new DotaPlayerSummary();
+            existing.setAccountId(accountId);
+            existing.setPersonaname("Player#" + accountId);
+            existing.setRankTier(0);
+            existing.setTotalMatches(0);
+            existing.setTotalWins(0);
+            existing.setIsTracked(1);
+            existing.setLastSyncAt(LocalDateTime.now());
+            summaryMapper.insert(existing);
+        } else {
+            existing.setIsTracked(1);
+            existing.setLastSyncAt(LocalDateTime.now());
+            summaryMapper.updateById(existing);
+        }
+        // 同步该玩家基本资料与近期比赛
+        Map<String, Object> syncRes = syncPlayerRecentMatches(accountId);
+        // 确保 is_tracked 保持为 1
+        DotaPlayerSummary updated = summaryMapper.selectById(accountId);
+        if (updated != null && !Integer.valueOf(1).equals(updated.getIsTracked())) {
+            updated.setIsTracked(1);
+            summaryMapper.updateById(updated);
+        }
+        Map<String, Object> res = new HashMap<>(syncRes);
+        res.put("player", summaryMapper.selectById(accountId));
+        return res;
+    }
+
+    /**
+     * 管理员接口：取消关注某个玩家 ID
+     */
+    public boolean removeTrackedPlayer(Long accountId) {
+        hourlySyncQueue.remove(accountId);
+        DotaPlayerSummary existing = summaryMapper.selectById(accountId);
+        if (existing != null) {
+            existing.setIsTracked(0);
+            summaryMapper.updateById(existing);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 管理员接口：将所有关注玩家加入错峰队列（逐个间隔 20 秒检查，不并发）
+     */
+    public int triggerStaggeredCheckAllTracked() {
+        scheduleHourlyTrackedPlayersCheck();
+        return hourlySyncQueue.size();
     }
 
 

@@ -374,9 +374,9 @@ export function getPatchName(patchId: number | undefined): string {
 }
 
 /**
- * 段位 코드 (rank_tier, 如 75 -> 超凡入圣 [5], 80 -> 冠绝一世) 转换为中文名与配色
+ * 段位代码 (rank_tier, 如 75 -> 超凡入圣 [5], 80 + leaderboardRank 698 -> 冠绝698) 转换为中文名与配色
  */
-export function getRankMeta(rankTier: number | undefined): {
+export function getRankMeta(rankTier: number | undefined | null, leaderboardRank?: number | undefined | null): {
   label: string;
   shortLabel: string;
   colorClass: string;
@@ -387,7 +387,7 @@ export function getRankMeta(rankTier: number | undefined): {
   const medal = Math.floor(rankTier / 10);
   const stars = rankTier % 10;
   const starStr = medal < 8 && stars > 0 ? ` [${stars}星]` : '';
-  const shortStar = medal < 8 && stars > 0 ? `${stars}` : '';
+  const shortStar = medal < 8 && stars > 0 ? `${stars}星` : '';
   const medalMap: Record<number, { name: string; short: string; cls: string }> = {
     1: { name: '先锋', short: '先锋', cls: 'text-stone-300 border-stone-600/60 bg-stone-800/40' },
     2: { name: '卫士', short: '卫士', cls: 'text-amber-600 border-amber-700/60 bg-amber-950/40' },
@@ -399,9 +399,16 @@ export function getRankMeta(rankTier: number | undefined): {
     8: { name: '冠绝一世', short: '冠绝', cls: 'text-amber-300 border-amber-400/60 bg-amber-500/15' }
   };
   const m = medalMap[medal] || { name: `段位${medal}`, short: `R${medal}`, cls: 'text-slate-300 border-slate-700 bg-slate-800' };
+  if (medal === 8 && leaderboardRank && leaderboardRank > 0) {
+    return {
+      label: `冠绝一世 #${leaderboardRank}`,
+      shortLabel: `冠绝${leaderboardRank}`,
+      colorClass: m.cls
+    };
+  }
   return {
     label: `${m.name}${starStr}`,
-    shortLabel: `${m.short}${shortStar}`,
+    shortLabel: medal === 8 ? '冠绝一世' : `${m.short}${shortStar}`,
     colorClass: m.cls
   };
 }

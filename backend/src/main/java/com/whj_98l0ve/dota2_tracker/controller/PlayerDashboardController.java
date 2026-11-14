@@ -9,6 +9,9 @@ import com.whj_98l0ve.dota2_tracker.service.OpenDotaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +29,61 @@ public class PlayerDashboardController {
     private final DotaMatchRawMapper matchRawMapper;
     private final DotaParseTaskMapper taskMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * 0. 网站首页聚合数据接口（已同步总比赛数、关注玩家去重开黑总场数、最近20天每日开黑/单排趋势、关注玩家身份列表）
+     */
+    @GetMapping("/home")
+    public Map<String, Object> getHomeOverview() {
+        long totalSyncedMatches = matchRawMapper.selectCount(null);
+        Map<String, Object> typeTotals = matchPlayerMapper.selectTrackedMatchTypeTotals();
+        long totalPartyMatches = typeTotals != null && typeTotals.get("totalPartyMatches") != null
+                ? ((Number) typeTotals.get("totalPartyMatches")).longValue() : 0L;
+        long totalSoloMatches = typeTotals != null && typeTotals.get("totalSoloMatches") != null
+                ? ((Number) typeTotals.get("totalSoloMatches")).longValue() : 0L;
+
+        // 构造最近 20 天的连续日期趋势数据（含无比赛日期补 0）
+        List<Map<String, Object>> rawDaily = matchPlayerMapper.selectTrackedDailyActivity();
+        Map<String, Map<String, Object>> dailyMap = new HashMap<>();
+        if (rawDaily != null) {
+            for (Map<String, Object> row : rawDaily) {
+                String d = String.valueOf(row.get("matchDate"));
+                dailyMap.put(d, row);
+            }
+        }
+
+        List<Map<String, Object>> daily20List = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter fullFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter shortFmt = DateTimeFormatter.ofPattern("MM-dd");
+
+        for (int i = 19; i >= 0; i--) {
+            LocalDate date = today.minusDays(i);
+            String dateKey = date.format(fullFmt);
+            Map<String, Object> found = dailyMap.get(dateKey);
+            int partyGames = found != null && found.get("partyGames") != null
+                    ? ((Number) found.get("partyGames")).intValue() : 0;
+            int soloGames = found != null && found.get("soloGames") != null
+                    ? ((Number) found.get("soloGames")).intValue() : 0;
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("date", dateKey);
+            item.put("shortDate", date.format(shortFmt));
+            item.put("partyGames", partyGames);
+            item.put("soloGames", soloGames);
+            daily20List.add(item);
+        }
+
+        List<Map<String, Object>> trackedPlayers = matchPlayerMapper.selectTrackedPlayersWithLastMatch();
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("totalSyncedMatches", totalSyncedMatches);
+        res.put("totalPartyMatches", totalPartyMatches);
+        res.put("totalSoloMatches", totalSoloMatches);
+        res.put("dailyActivity", daily20List);
+        res.put("trackedPlayers", trackedPlayers);
+        return res;
+    }
 
     /**
      * 1. 录入玩家 ID 并启动 7 天对局同步与解析流
@@ -62,7 +120,8 @@ public class PlayerDashboardController {
     @GetMapping("/{accountId}/dashboard")
     public Map<String, Object> getDashboardData(@PathVariable Long accountId) {
         DotaPlayerSummary summary = summaryMapper.selectById(accountId);
-        List<DotaPlayerHeroStats> topHeroes = heroStatsMapper.selectTopHeroes(accountId, 15);
+        // 查询该玩家使用过的全部英雄全维统计（按使用场次从高到低排序，包含天辉/夜魇胜率、对线三态分布、最近比赛时间）
+        List<Map<String, Object>> topHeroes = matchPlayerMapper.selectHeroDetailedStats(accountId);
         List<Map<String, Object>> teammates = matchPlayerMapper.selectTeammateSynergy(accountId);
 
         // 1. 各分路表现 Pos 1 ~ 5 (纯本地)

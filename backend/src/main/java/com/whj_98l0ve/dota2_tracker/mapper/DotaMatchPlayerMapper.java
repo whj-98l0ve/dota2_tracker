@@ -116,4 +116,97 @@ public interface DotaMatchPlayerMapper extends BaseMapper<DotaMatchPlayer> {
         GROUP BY is_radiant
     """)
     List<Map<String, Object>> selectFactionStats(@Param("accountId") Long accountId);
+
+    // 统计玩家所有使用过的英雄全维度明细（按场次从高到低排序：场次、胜率、天辉胜率、夜魇胜率、线优/均势/线劣分布、最近一场时间）
+    @Select("""
+        SELECT 
+            hero_id AS heroId,
+            COUNT(1) AS matches,
+            SUM(CASE WHEN win = 1 THEN 1 ELSE 0 END) AS wins,
+            SUM(CASE WHEN win = 0 THEN 1 ELSE 0 END) AS losses,
+            ROUND(SUM(CASE WHEN win = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) AS winRate,
+            ROUND((SUM(kills) + SUM(assists)) / GREATEST(SUM(deaths), 1), 2) AS kda,
+            SUM(CASE WHEN is_radiant = 1 THEN 1 ELSE 0 END) AS radiantMatches,
+            SUM(CASE WHEN is_radiant = 1 AND win = 1 THEN 1 ELSE 0 END) AS radiantWins,
+            ROUND(COALESCE(SUM(CASE WHEN is_radiant = 1 AND win = 1 THEN 1 ELSE 0 END) * 100.0 / NULLIF(SUM(CASE WHEN is_radiant = 1 THEN 1 ELSE 0 END), 0), 0), 1) AS radiantWinRate,
+            SUM(CASE WHEN is_radiant = 0 THEN 1 ELSE 0 END) AS direMatches,
+            SUM(CASE WHEN is_radiant = 0 AND win = 1 THEN 1 ELSE 0 END) AS direWins,
+            ROUND(COALESCE(SUM(CASE WHEN is_radiant = 0 AND win = 1 THEN 1 ELSE 0 END) * 100.0 / NULLIF(SUM(CASE WHEN is_radiant = 0 THEN 1 ELSE 0 END), 0), 0), 1) AS direWinRate,
+            SUM(CASE WHEN lane_result = 1 THEN 1 ELSE 0 END) AS laneWinCount,
+            SUM(CASE WHEN lane_result = 2 OR lane_result IS NULL OR lane_result NOT IN (1, 3) THEN 1 ELSE 0 END) AS laneEvenCount,
+            SUM(CASE WHEN lane_result = 3 THEN 1 ELSE 0 END) AS laneLossCount,
+            ROUND(SUM(CASE WHEN lane_result = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) AS laneWinRate,
+            ROUND(SUM(CASE WHEN lane_result = 2 OR lane_result IS NULL OR lane_result NOT IN (1, 3) THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) AS laneEvenRate,
+            ROUND(SUM(CASE WHEN lane_result = 3 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) AS laneLossRate,
+            MAX(start_time) AS lastPlayedTime
+        FROM dota_match_player
+        WHERE account_id = #{accountId}
+        GROUP BY hero_id
+        ORDER BY matches DESC, winRate DESC, lastPlayedTime DESC
+    """)
+    List<Map<String, Object>> selectHeroDetailedStats(@Param("accountId") Long accountId);
+
+    // 统计首页核心指标：关注玩家去重后的开黑对局总场数与单排对局总场数（同一场比赛有2/3/5个关注玩家开黑只算1场）
+    @Select("""
+        SELECT 
+            COALESCE(SUM(CASE WHEN is_party = 1 THEN 1 ELSE 0 END), 0) AS totalPartyMatches,
+            COALESCE(SUM(CASE WHEN is_party = 0 THEN 1 ELSE 0 END), 0) AS totalSoloMatches
+        FROM (
+            SELECT 
+                mp.match_id,
+                CASE 
+                    WHEN MAX(COALESCE(mp.party_size, 1)) > 1 OR COUNT(DISTINCT mp.account_id) > 1 THEN 1 
+                    ELSE 0 
+                END AS is_party
+            FROM dota_match_player mp
+            JOIN dota_player_summary s ON mp.account_id = s.account_id
+            WHERE s.is_tracked = 1
+            GROUP BY mp.match_id
+        ) t
+    """)
+    Map<String, Object> selectTrackedMatchTypeTotals();
+
+    // 统计首页群活动：关注玩家每天的开黑场次与单排场次（按 match_id 去重，多人同局开黑只算1场）
+    @Select("""
+        SELECT 
+            match_date AS matchDate,
+            COALESCE(SUM(CASE WHEN is_party = 1 THEN 1 ELSE 0 END), 0) AS partyGames,
+            COALESCE(SUM(CASE WHEN is_party = 0 THEN 1 ELSE 0 END), 0) AS soloGames
+        FROM (
+            SELECT 
+                mp.match_id,
+                DATE_FORMAT(FROM_UNIXTIME(MAX(mp.start_time)), '%Y-%m-%d') AS match_date,
+                CASE 
+                    WHEN MAX(COALESCE(mp.party_size, 1)) > 1 OR COUNT(DISTINCT mp.account_id) > 1 THEN 1 
+                    ELSE 0 
+                END AS is_party
+            FROM dota_match_player mp
+            JOIN dota_player_summary s ON mp.account_id = s.account_id
+            WHERE s.is_tracked = 1
+            GROUP BY mp.match_id
+        ) t
+        GROUP BY match_date
+        ORDER BY match_date DESC
+        LIMIT 30
+    """)
+    List<Map<String, Object>> selectTrackedDailyActivity();
+
+    // 查询所有关注玩家列表及每个人最近一场比赛时间（供首页“选择你的身份”下拉菜单使用）
+    @Select("""
+        SELECT 
+            s.account_id AS accountId,
+            s.personaname AS personaname,
+            s.avatar AS avatar,
+            s.rank_tier AS rankTier,
+            s.leaderboard_rank AS leaderboardRank,
+            s.total_matches AS totalMatches,
+            s.win_rate AS winRate,
+            MAX(mp.start_time) AS lastMatchTime
+        FROM dota_player_summary s
+        LEFT JOIN dota_match_player mp ON s.account_id = mp.account_id
+        WHERE s.is_tracked = 1
+        GROUP BY s.account_id, s.personaname, s.avatar, s.rank_tier, s.leaderboard_rank, s.total_matches, s.win_rate
+        ORDER BY lastMatchTime DESC, s.total_matches DESC
+    """)
+    List<Map<String, Object>> selectTrackedPlayersWithLastMatch();
 }

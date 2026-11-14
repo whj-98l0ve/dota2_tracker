@@ -58,7 +58,13 @@ public class OpenDotaClient {
                 return null;
             }
             try {
-                return objectMapper.readTree(rawJson);
+                JsonNode node = objectMapper.readTree(rawJson);
+                // 若 OpenDota 返回类似 {"error":"Internal Server Error"} 的错误对象，视为请求失败返回 null
+                if (node != null && node.isObject() && node.has("error")) {
+                    log.warn("OpenDota 返回错误响应: {} -> {}", path, node.path("error").asText());
+                    return null;
+                }
+                return node;
             } catch (Exception parseEx) {
                 log.warn("JSON 语法解析失败 (可能数据被截断): {} -> {}", path, parseEx.getMessage());
                 return null;
@@ -103,9 +109,8 @@ public class OpenDotaClient {
             coolDownUntil = System.currentTimeMillis() + 60000L;
             return null;
         } catch (ResourceAccessException e) {
-            // 网络超时：激活 15 秒熔断冷却，避免连续请求同一失效通道卡死线程
-            log.warn("请求 OpenDota 网络超时，开启 15 秒降级保护: {}", e.getMessage());
-            coolDownUntil = System.currentTimeMillis() + 15000L;
+            // 网络超时：仅记录日志并返回空，不开启全局熔断冷却，避免因 matches 接口慢超时导致后续 recentMatches 降级请求被直接跳过
+            log.warn("请求 OpenDota 网络超时: {}", e.getMessage());
             return null;
         } catch (Exception e) {
             log.warn("请求 OpenDota 异常: {}", e.getMessage());
