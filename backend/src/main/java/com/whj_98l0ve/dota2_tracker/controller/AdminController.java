@@ -1,5 +1,6 @@
 package com.whj_98l0ve.dota2_tracker.controller;
 
+import com.whj_98l0ve.dota2_tracker.service.DeepSeekService;
 import com.whj_98l0ve.dota2_tracker.service.OpenDotaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +19,7 @@ import java.util.Map;
 public class AdminController {
 
     private final OpenDotaService openDotaService;
+    private final DeepSeekService deepSeekService;
 
     @Value("${admin.username:root}")
     private String adminUsername;
@@ -80,6 +82,23 @@ public class AdminController {
     }
 
     /**
+     * 3.2 设置或解除关注玩家的休眠状态（保留数据，仅暂停/恢复自动监控）
+     */
+    @RequestMapping(value = "/players/{accountId}/sleep", method = {RequestMethod.POST, RequestMethod.PUT})
+    public Map<String, Object> togglePlayerSleep(
+            @PathVariable Long accountId,
+            @RequestBody(required = false) Map<String, Object> body
+    ) {
+        boolean sleep = body != null && Boolean.parseBoolean(String.valueOf(body.getOrDefault("sleep", true)));
+        boolean updated = openDotaService.updateTrackedPlayerSleep(accountId, sleep);
+        Map<String, Object> res = new HashMap<>();
+        res.put("success", updated);
+        res.put("isTracked", sleep ? 2 : 1);
+        res.put("msg", updated ? (sleep ? "已将该账号设为休眠，停止自动监控" : "已唤醒该账号，恢复定时监控") : "未找到该关注玩家记录");
+        return res;
+    }
+
+    /**
      * 4. 删除（取消关注）玩家 ID，不再参与每小时自动同步
      */
     @DeleteMapping("/players/{accountId}")
@@ -102,5 +121,31 @@ public class AdminController {
         res.put("queueSize", count);
         res.put("msg", "已将关注玩家排入错峰巡检队列，后台将每隔 20 秒逐个向 OpenDota 检查更新");
         return res;
+    }
+
+    /**
+     * 6. 获取当前 DeepSeek AI 提示词配置（含系统默认模板）
+     */
+    @GetMapping("/ai-prompts")
+    public Map<String, Object> getAiPrompts() {
+        return deepSeekService.getAiPrompts();
+    }
+
+    /**
+     * 7. 保存管理员自定义的 DeepSeek AI 提示词配置（立即生效）
+     */
+    @PostMapping("/ai-prompts")
+    public Map<String, Object> saveAiPrompts(@RequestBody Map<String, String> body) {
+        String blamePrompt = body != null ? body.get("blamePrompt") : null;
+        String mvpPrompt = body != null ? body.get("mvpPrompt") : null;
+        return deepSeekService.saveAiPrompts(blamePrompt, mvpPrompt);
+    }
+
+    /**
+     * 8. 一键恢复系统默认 DeepSeek AI 提示词
+     */
+    @PostMapping("/ai-prompts/reset")
+    public Map<String, Object> resetAiPrompts() {
+        return deepSeekService.resetAiPrompts();
     }
 }

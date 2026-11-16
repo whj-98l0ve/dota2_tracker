@@ -1,43 +1,43 @@
 <template>
-  <div class="bg-[#0b0e14] text-slate-200 min-h-screen font-sans antialiased pb-20 selection:bg-cyan-500 selection:text-white">
-    <!-- 顶部电竞导航栏 -->
-    <header class="border-b border-slate-800/80 bg-[#0c1220]/90 backdrop-blur sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        <div class="flex items-center space-x-3">
+  <div class="text-slate-100 min-h-screen font-sans antialiased pb-20">
+    <!-- 顶部极光毛玻璃导航栏（移动端紧凑适配） -->
+    <header class="aurora-nav sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
+        <div class="flex items-center space-x-2.5 sm:space-x-3.5 min-w-0">
           <div
-            class="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 p-[1.5px] flex items-center justify-center shadow-lg shadow-cyan-500/20 cursor-pointer"
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 p-[1.5px] flex items-center justify-center shadow-lg shadow-cyan-400/25 cursor-pointer shrink-0"
             @click="goBackOrHome"
             title="返回玩家主页"
           >
-            <div class="w-full h-full bg-[#0b0f19] rounded-[7px] flex items-center justify-center text-cyan-400 font-black">
+            <div class="w-full h-full bg-[#060a15]/90 backdrop-blur-md rounded-[10px] flex items-center justify-center text-cyan-300 font-black text-sm sm:text-base">
               毒
             </div>
           </div>
-          <div class="flex items-baseline space-x-2">
-            <span class="text-xl font-black tracking-wide text-white cursor-pointer" @click="goBackOrHome">
-              毒瘤榜<span class="text-cyan-400">.GG</span>
+          <div class="flex items-baseline space-x-2 truncate">
+            <span class="text-lg sm:text-xl font-black tracking-wide text-white cursor-pointer truncate" @click="goBackOrHome">
+              毒瘤榜<span class="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">.GG</span>
             </span>
-            <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-950/90 text-cyan-400 font-bold border border-cyan-800/60">
+            <span class="hidden md:inline-block text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/[0.06] text-cyan-200 font-bold border border-white/15 backdrop-blur-md">
               MATCH TELEMETRY
             </span>
           </div>
         </div>
 
         <!-- 右侧：复制对局 ID 与返回 -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <button
             @click="copyMatchId"
-            class="flex items-center gap-1.5 text-xs text-slate-300 bg-[#121721] hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700/80 font-mono transition-colors"
+            class="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs text-slate-200 aurora-subcard hover:border-cyan-400/40 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full font-mono transition-all"
           >
-            <span>对局 ID: <strong class="text-cyan-400">{{ matchId }}</strong></span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300">{{ copied ? '已复制!' : '复制' }}</span>
+            <span><span class="hidden sm:inline">对局 </span>ID: <strong class="text-cyan-300">{{ matchId }}</strong></span>
+            <span class="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.2 rounded-full bg-cyan-400/20 text-cyan-200">{{ copied ? '已复制' : '复制' }}</span>
           </button>
 
           <a
             v-if="rawJson?.replay_url"
             :href="rawJson.replay_url"
             target="_blank"
-            class="hidden md:inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 font-semibold transition-all"
+            class="hidden md:inline-flex items-center gap-1 text-xs px-3.5 py-1.5 rounded-full bg-emerald-400/15 text-emerald-300 border border-emerald-400/35 hover:bg-emerald-400/25 font-semibold backdrop-blur-md transition-all"
           >
             🎬 下载录像
           </a>
@@ -45,137 +45,134 @@
           <button
             v-if="highlightAccountId"
             @click="goBackOrHome"
-            class="text-xs px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+            class="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.14] text-slate-100 border border-white/15 hover:border-cyan-400/35 backdrop-blur-md transition-all"
           >
-            ← 玩家档案
+            ← 档案
           </button>
         </div>
       </div>
     </header>
 
     <!-- 加载中状态 -->
-    <div v-if="loading" class="flex flex-col items-center justify-center min-h-[70vh] gap-4">
-      <div class="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin"></div>
-      <span class="text-cyan-400 font-black tracking-widest text-xs uppercase animate-pulse">
+    <div v-if="loading" class="flex flex-col items-center justify-center min-h-[70vh] gap-4 px-4 text-center">
+      <div class="w-12 h-12 border-4 border-cyan-400/20 border-t-cyan-300 rounded-full animate-spin"></div>
+      <span class="text-cyan-300 font-black tracking-widest text-xs uppercase animate-pulse">
         正在从本地数据库解析高精度比赛 JSON 遥测数据...
       </span>
     </div>
 
     <!-- 未找到比赛 -->
-    <div v-else-if="!matchMeta" class="max-w-3xl mx-auto mt-20 bg-[#121721] border border-slate-800 rounded-2xl p-10 text-center">
+    <div v-else-if="!matchMeta" class="max-w-3xl mx-auto mt-12 sm:mt-20 mx-3 aurora-glass rounded-3xl p-6 sm:p-10 text-center">
       <div class="text-4xl mb-3">⚠️</div>
-      <h2 class="text-xl font-black text-white">未查询到该场比赛的本地高精度存档</h2>
+      <h2 class="text-lg sm:text-xl font-black text-white">未查询到该场比赛的本地高精度存档</h2>
       <p class="text-xs text-slate-400 mt-2 font-mono">
         对局编号 {{ matchId }} 尚未入库或仍在等待 OpenDota 解析队列完成。
       </p>
       <button
         @click="goBackOrHome"
-        class="mt-6 px-5 py-2 rounded-xl bg-cyan-500 text-black font-black text-xs hover:bg-cyan-400 transition-all"
+        class="mt-6 px-5 py-2.5 rounded-xl aurora-btn-primary font-black text-xs"
       >
         返回玩家战绩主页
       </button>
     </div>
 
     <!-- 主体内容区 -->
-    <main v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
+    <main v-else class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-4 sm:mt-6 space-y-5 sm:space-y-6">
       <!-- 1. 赛事级全局战报大横幅 (Match Overview Hero Card) -->
-      <section class="bg-[#121721] border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        <!-- 动态阵营胜利光晕背景 -->
+      <section class="aurora-glass rounded-2xl sm:rounded-3xl p-4 sm:p-8 relative overflow-hidden">
+        <!-- 动态阵营胜利极光光晕背景 -->
         <div
           :class="
             matchMeta.radiantWin
-              ? 'bg-gradient-to-br from-emerald-500/15 via-cyan-500/5 to-transparent'
-              : 'bg-gradient-to-br from-rose-500/15 via-purple-500/5 to-transparent'
+              ? 'bg-gradient-to-br from-emerald-400/20 via-cyan-400/10 to-transparent'
+              : 'bg-gradient-to-br from-rose-500/20 via-fuchsia-500/10 to-transparent'
           "
           class="absolute inset-0 pointer-events-none"
         ></div>
 
         <!-- 顶部比赛环境元数据条 -->
-        <div class="relative z-10 flex flex-wrap items-center justify-between gap-3 pb-5 mb-6 border-b border-slate-800/80 text-xs font-mono">
-          <div class="flex flex-wrap items-center gap-2.5">
-            <span class="px-2.5 py-1 rounded-lg bg-[#0b0e14] border border-slate-700/80 text-cyan-400 font-bold">
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-2.5 pb-4 sm:pb-5 mb-4 sm:mb-6 border-b border-white/10 text-[11px] sm:text-xs font-mono">
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
+            <span class="px-2.5 sm:px-3 py-1 rounded-full aurora-subcard text-cyan-300 font-bold">
               🎮 {{ getGameModeName(matchMeta.gameMode) }}
             </span>
-            <span class="px-2.5 py-1 rounded-lg bg-[#0b0e14] border border-slate-800 text-slate-300">
+            <span class="px-2.5 sm:px-3 py-1 rounded-full aurora-subcard text-slate-200">
               🏆 {{ getLobbyTypeName(matchMeta.lobbyType) }}
             </span>
-            <span class="px-2.5 py-1 rounded-lg bg-[#0b0e14] border border-slate-800 text-amber-300">
+            <span class="px-2.5 sm:px-3 py-1 rounded-full aurora-subcard text-amber-300">
               ⚙️ {{ getPatchName(rawJson?.patch) }}
             </span>
-            <span v-if="rawJson?.first_blood_time !== undefined" class="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400">
-              🩸 一血时间: {{ formatGameTime(rawJson.first_blood_time) }}
+            <span v-if="rawJson?.comeback > 2500" class="px-2.5 sm:px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-200 font-bold backdrop-blur-md">
+              🔥 翻盘 (逆转 {{ rawJson.comeback.toLocaleString() }})
             </span>
-            <span v-if="rawJson?.comeback > 2500" class="px-2.5 py-1 rounded-lg bg-purple-500/15 border border-purple-500/40 text-purple-300 font-bold">
-              🔥 史诗翻盘局 (逆转 {{ rawJson.comeback.toLocaleString() }} 经济)
-            </span>
-            <span v-else-if="rawJson?.stomp > 15000" class="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-300 font-bold">
-              ⚡ 碾压局 (最高领先 {{ rawJson.stomp.toLocaleString() }} 经济)
+            <span v-else-if="rawJson?.stomp > 15000" class="px-2.5 sm:px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-200 font-bold backdrop-blur-md">
+              ⚡ 碾压 (领先 {{ rawJson.stomp.toLocaleString() }})
             </span>
           </div>
 
-          <div class="text-slate-400">
-            开赛时间: <strong class="text-slate-200">{{ formatDate(matchMeta.startTime) }}</strong>
+          <div class="text-slate-300/80 text-[11px] sm:text-xs">
+            开赛: <strong class="text-white">{{ formatDate(matchMeta.startTime) }}</strong>
           </div>
         </div>
 
-        <!-- 中央大比分与 MVP / SVP 荣誉殿堂 -->
-        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <!-- 中央大比分与 MVP / SVP 荣誉殿堂（移动端比分置顶 order-first lg:order-none） -->
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-center">
           <!-- 左：全场最佳 MVP 卡 -->
           <div
             v-if="mvpPlayer"
-            class="lg:col-span-4 bg-[#0b0e14]/90 border border-amber-500/40 rounded-2xl p-4 shadow-lg relative overflow-hidden"
+            class="lg:col-span-4 aurora-subcard border border-amber-400/45 rounded-2xl p-3.5 sm:p-4 shadow-[0_0_25px_rgba(245,158,11,0.15)] relative overflow-hidden"
           >
             <div class="flex items-center justify-between mb-2">
-              <span class="px-2 py-0.5 rounded bg-gradient-to-r from-amber-400 to-yellow-500 text-black text-[10px] font-black tracking-wider">
+              <span class="px-2.5 py-0.5 rounded-full aurora-btn-gold text-[10px] font-black tracking-wider">
                 👑 MATCH MVP 全场最佳
               </span>
-              <span class="text-xs font-mono text-amber-400 font-black">战力评级 {{ mvpPlayer.impScore }}</span>
+              <span class="text-xs font-mono text-amber-300 font-black">战力评级 {{ mvpPlayer.impScore }}</span>
             </div>
-            <div class="flex items-center gap-3.5">
-              <img :src="getHeroAvatar(mvpPlayer.heroId)" class="w-16 h-11 rounded-xl border-2 border-amber-400 object-cover shadow-md" />
+            <div class="flex items-center gap-3">
+              <img :src="getHeroAvatar(mvpPlayer.heroId)" class="w-14 sm:w-16 h-10 sm:h-11 rounded-xl border-2 border-amber-300 object-cover shadow-md shrink-0" />
               <div class="min-w-0 flex-1">
                 <div class="text-sm font-black text-white truncate">{{ mvpPlayer.personaname }}</div>
-                <div class="text-xs text-amber-300 font-bold">{{ getHeroName(mvpPlayer.heroId) }} · {{ getPositionMeta(mvpPlayer.laneRole).short }}</div>
+                <div class="text-xs text-amber-200 font-bold truncate">{{ getHeroName(mvpPlayer.heroId) }} · {{ getPositionMeta(mvpPlayer.laneRole).short }}</div>
                 <div class="text-[11px] font-mono text-slate-300 mt-1">
-                  <span class="text-emerald-400 font-bold">{{ mvpPlayer.kills }}</span> /
+                  <span class="text-emerald-300 font-bold">{{ mvpPlayer.kills }}</span> /
                   <span class="text-rose-400 font-bold">{{ mvpPlayer.deaths }}</span> /
                   <span class="text-cyan-300 font-bold">{{ mvpPlayer.assists }}</span>
-                  <span class="text-slate-500 ml-1.5">({{ mvpPlayer.kda }} KDA · 伤害 {{ mvpPlayer.damageShare }}%)</span>
+                  <span class="text-slate-400 ml-1">({{ mvpPlayer.kda }} KDA · 伤 {{ mvpPlayer.damageShare }}%)</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 中：大比分对战牌 -->
-          <div class="lg:col-span-4 flex flex-col items-center justify-center py-2">
+          <!-- 中：大比分对战牌（移动端优先置顶展示） -->
+          <div class="order-first lg:order-none lg:col-span-4 flex flex-col items-center justify-center py-1 sm:py-2">
             <div
-              :class="matchMeta.radiantWin ? 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' : 'text-rose-500 border-rose-500/40 bg-rose-500/10'"
-              class="px-4 py-1 rounded-full border text-xs font-black tracking-widest uppercase mb-3 shadow"
+              :class="matchMeta.radiantWin ? 'text-emerald-300 border-emerald-400/45 bg-emerald-400/15 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'text-rose-300 border-rose-400/45 bg-rose-500/15 shadow-[0_0_20px_rgba(244,63,94,0.2)]'"
+              class="px-3.5 sm:px-4 py-1 rounded-full border text-[11px] sm:text-xs font-black tracking-widest uppercase mb-3 backdrop-blur-md"
             >
               {{ matchMeta.radiantWin ? '✦ 天辉获胜 RADIANT VICTORY' : '✦ 夜魇获胜 DIRE VICTORY' }}
             </div>
 
-            <div class="flex items-center gap-7">
+            <div class="flex items-center gap-5 sm:gap-7">
               <div class="text-center">
-                <div class="text-5xl font-black font-mono leading-none" :class="matchMeta.radiantWin ? 'text-emerald-400' : 'text-slate-400'">
+                <div class="text-4xl sm:text-5xl font-black font-mono leading-none drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]" :class="matchMeta.radiantWin ? 'text-emerald-300' : 'text-slate-400'">
                   {{ radiantScore }}
                 </div>
-                <div class="text-[11px] font-black tracking-widest text-emerald-400 mt-2">天辉 RADIANT</div>
+                <div class="text-[10px] sm:text-[11px] font-black tracking-widest text-emerald-300 mt-1.5 sm:mt-2">天辉 RADIANT</div>
               </div>
 
               <div class="flex flex-col items-center">
-                <span class="px-3 py-1 rounded-lg bg-slate-800/90 border border-slate-700 text-xs font-black text-cyan-400 tracking-widest">
+                <span class="px-3 py-0.5 sm:py-1 rounded-full aurora-subcard text-xs font-black text-cyan-300 tracking-widest">
                   VS
                 </span>
-                <span class="text-lg font-mono font-bold text-white mt-2">{{ formatGameTime(matchMeta.duration) }}</span>
-                <span class="text-[10px] text-slate-500 font-mono">比赛总时长</span>
+                <span class="text-base sm:text-lg font-mono font-bold text-white mt-1.5 sm:mt-2">{{ formatGameTime(matchMeta.duration) }}</span>
+                <span class="text-[10px] text-slate-400 font-mono">比赛总时长</span>
               </div>
 
               <div class="text-center">
-                <div class="text-5xl font-black font-mono leading-none" :class="!matchMeta.radiantWin ? 'text-rose-500' : 'text-slate-400'">
+                <div class="text-4xl sm:text-5xl font-black font-mono leading-none drop-shadow-[0_0_15px_rgba(244,63,94,0.3)]" :class="!matchMeta.radiantWin ? 'text-rose-400' : 'text-slate-400'">
                   {{ direScore }}
                 </div>
-                <div class="text-[11px] font-black tracking-widest text-rose-500 mt-2">夜魇 DIRE</div>
+                <div class="text-[10px] sm:text-[11px] font-black tracking-widest text-rose-400 mt-1.5 sm:mt-2">夜魇 DIRE</div>
               </div>
             </div>
           </div>
@@ -183,68 +180,50 @@
           <!-- 右：败方最佳 SVP 卡 -->
           <div
             v-if="svpPlayer"
-            class="lg:col-span-4 bg-[#0b0e14]/90 border border-purple-500/40 rounded-2xl p-4 shadow-lg relative overflow-hidden"
+            class="lg:col-span-4 aurora-subcard border border-purple-400/45 rounded-2xl p-3.5 sm:p-4 shadow-[0_0_25px_rgba(168,85,247,0.15)] relative overflow-hidden"
           >
             <div class="flex items-center justify-between mb-2">
-              <span class="px-2 py-0.5 rounded bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[10px] font-black tracking-wider">
+              <span class="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[10px] font-black tracking-wider shadow">
                 🛡️ MATCH SVP 败方最佳
               </span>
               <span class="text-xs font-mono text-purple-300 font-black">战力评级 {{ svpPlayer.impScore }}</span>
             </div>
-            <div class="flex items-center gap-3.5">
-              <img :src="getHeroAvatar(svpPlayer.heroId)" class="w-16 h-11 rounded-xl border-2 border-purple-400 object-cover shadow-md" />
+            <div class="flex items-center gap-3">
+              <img :src="getHeroAvatar(svpPlayer.heroId)" class="w-14 sm:w-16 h-10 sm:h-11 rounded-xl border-2 border-purple-400 object-cover shadow-md shrink-0" />
               <div class="min-w-0 flex-1">
                 <div class="text-sm font-black text-white truncate">{{ svpPlayer.personaname }}</div>
-                <div class="text-xs text-purple-300 font-bold">{{ getHeroName(svpPlayer.heroId) }} · {{ getPositionMeta(svpPlayer.laneRole).short }}</div>
+                <div class="text-xs text-purple-200 font-bold truncate">{{ getHeroName(svpPlayer.heroId) }} · {{ getPositionMeta(svpPlayer.laneRole).short }}</div>
                 <div class="text-[11px] font-mono text-slate-300 mt-1">
-                  <span class="text-emerald-400 font-bold">{{ svpPlayer.kills }}</span> /
+                  <span class="text-emerald-300 font-bold">{{ svpPlayer.kills }}</span> /
                   <span class="text-rose-400 font-bold">{{ svpPlayer.deaths }}</span> /
                   <span class="text-cyan-300 font-bold">{{ svpPlayer.assists }}</span>
-                  <span class="text-slate-500 ml-1.5">({{ svpPlayer.kda }} KDA · 伤害 {{ svpPlayer.damageShare }}%)</span>
+                  <span class="text-slate-400 ml-1">({{ svpPlayer.kda }} KDA · 伤 {{ svpPlayer.damageShare }}%)</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 团队四维核心指标对抗进度条 (经济 / 英雄伤害 / 建筑伤害 / 治疗) -->
-        <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80 font-mono text-xs">
-          <div
-            v-for="bar in teamComparisonBars"
-            :key="bar.label"
-            class="bg-[#0b0e14]/80 border border-slate-800/90 rounded-xl p-3"
-          >
-            <div class="flex justify-between items-center text-[11px] mb-1.5">
-              <span class="text-emerald-400 font-bold">{{ bar.rVal.toLocaleString() }}</span>
-              <span class="text-slate-400 font-sans font-bold text-[11px]">{{ bar.label }}</span>
-              <span class="text-rose-400 font-bold">{{ bar.dVal.toLocaleString() }}</span>
-            </div>
-            <div class="w-full h-2 bg-rose-500/80 rounded-full overflow-hidden flex">
-              <div class="bg-emerald-400 h-full transition-all" :style="{ width: bar.rPct + '%' }"></div>
-            </div>
-          </div>
-        </div>
-
         <!-- BP 选人与禁用栏 (Draft Picks & Bans) -->
-        <div v-if="draftPicksBans.length > 0" class="relative z-10 mt-6 pt-5 border-t border-slate-800/80">
-          <div class="text-[11px] font-mono text-slate-400 mb-3 flex items-center justify-between">
-            <span class="font-bold text-slate-300">🎯 赛前 BP 征召序列 (Draft Picks & Bans)</span>
+        <div v-if="draftPicksBans.length > 0" class="relative z-10 mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-white/10">
+          <div class="text-[11px] font-mono text-slate-300 mb-3 flex items-center justify-between">
+            <span class="font-bold text-white">🎯 赛前 BP 征召序列 (Draft Picks & Bans)</span>
             <span>共 {{ draftPicksBans.length }} 轮</span>
           </div>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             <!-- 天辉 BP -->
-            <div class="flex flex-wrap items-center gap-1.5 bg-[#0b0e14]/80 p-2.5 rounded-xl border border-emerald-500/20">
-              <span class="text-[10px] font-black text-emerald-400 px-1.5">天辉 BP:</span>
+            <div class="flex flex-wrap items-center gap-1.5 aurora-subcard p-2.5 rounded-xl border border-emerald-400/25">
+              <span class="text-[10px] font-black text-emerald-300 px-1">天辉 BP:</span>
               <div
                 v-for="pb in draftPicksBans.filter((x) => x.team === 0)"
                 :key="pb.order"
                 class="relative rounded overflow-hidden border"
-                :class="pb.is_pick ? 'border-emerald-400 w-10 h-7' : 'border-slate-700 w-8 h-6 opacity-50 grayscale'"
+                :class="pb.is_pick ? 'border-emerald-400 w-9 sm:w-10 h-6 sm:h-7 shadow-sm' : 'border-white/10 w-7 sm:w-8 h-5 sm:h-6 opacity-50 grayscale'"
                 :title="`${pb.is_pick ? '选用' : '禁用'}: ${getHeroName(pb.hero_id)} (第 ${pb.order + 1} 手)`"
               >
                 <img :src="getHeroAvatar(pb.hero_id)" class="w-full h-full object-cover" />
                 <span
-                  :class="pb.is_pick ? 'bg-emerald-500 text-black' : 'bg-rose-900 text-rose-200'"
+                  :class="pb.is_pick ? 'bg-emerald-400 text-black' : 'bg-rose-950 text-rose-200'"
                   class="absolute bottom-0 right-0 text-[8px] font-mono font-black px-0.5 leading-tight"
                 >
                   {{ pb.is_pick ? `P${pb.order + 1}` : `B${pb.order + 1}` }}
@@ -253,18 +232,18 @@
             </div>
 
             <!-- 夜魇 BP -->
-            <div class="flex flex-wrap items-center gap-1.5 bg-[#0b0e14]/80 p-2.5 rounded-xl border border-rose-500/20">
-              <span class="text-[10px] font-black text-rose-400 px-1.5">夜魇 BP:</span>
+            <div class="flex flex-wrap items-center gap-1.5 aurora-subcard p-2.5 rounded-xl border border-rose-400/25">
+              <span class="text-[10px] font-black text-rose-400 px-1">夜魇 BP:</span>
               <div
                 v-for="pb in draftPicksBans.filter((x) => x.team === 1)"
                 :key="pb.order"
                 class="relative rounded overflow-hidden border"
-                :class="pb.is_pick ? 'border-rose-400 w-10 h-7' : 'border-slate-700 w-8 h-6 opacity-50 grayscale'"
+                :class="pb.is_pick ? 'border-rose-400 w-9 sm:w-10 h-6 sm:h-7 shadow-sm' : 'border-white/10 w-7 sm:w-8 h-5 sm:h-6 opacity-50 grayscale'"
                 :title="`${pb.is_pick ? '选用' : '禁用'}: ${getHeroName(pb.hero_id)} (第 ${pb.order + 1} 手)`"
               >
                 <img :src="getHeroAvatar(pb.hero_id)" class="w-full h-full object-cover" />
                 <span
-                  :class="pb.is_pick ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-300'"
+                  :class="pb.is_pick ? 'bg-rose-500 text-white' : 'bg-slate-900 text-slate-300'"
                   class="absolute bottom-0 right-0 text-[8px] font-mono font-black px-0.5 leading-tight"
                 >
                   {{ pb.is_pick ? `P${pb.order + 1}` : `B${pb.order + 1}` }}
@@ -275,26 +254,47 @@
         </div>
       </section>
 
-      <!-- 2. 六大电竞战术模块切换导航栏 (Tactical Navigation Tabs) -->
-      <nav class="bg-[#121721] border border-slate-800/80 rounded-2xl p-1.5 flex flex-wrap items-center gap-1.5 shadow-lg">
+      <!-- 2. 一级战术模块极光毛玻璃切换导航栏 -->
+      <nav class="aurora-glass rounded-2xl p-1.5 grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5">
         <button
           v-for="tab in tabs"
           :key="tab.key"
           @click="activeTab = tab.key"
           :class="
             activeTab === tab.key
-              ? 'bg-gradient-to-r from-cyan-500/20 to-emerald-500/15 text-cyan-300 border-cyan-500/50 shadow-md'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-[#0b0e14]/60 border-transparent'
+              ? 'bg-gradient-to-r from-cyan-400/25 via-teal-400/20 to-indigo-500/20 text-cyan-200 border-cyan-300/50 shadow-[0_0_20px_rgba(34,211,238,0.2)]'
+              : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] border-transparent'
           "
-          class="flex-1 min-w-[140px] py-2.5 px-4 rounded-xl border text-xs font-black tracking-wide transition-all flex items-center justify-center gap-2"
+          class="sm:flex-1 sm:min-w-[140px] py-2 sm:py-2.5 px-2.5 sm:px-4 rounded-xl border text-[11px] sm:text-xs font-black tracking-wide transition-all flex items-center justify-center gap-1.5 sm:gap-2"
         >
           <span>{{ tab.icon }}</span>
-          <span>{{ tab.label }}</span>
+          <span class="truncate">{{ tab.label }}</span>
+        </button>
+      </nav>
+
+      <!-- 2.5 详情复盘二级子导航栏（仅选中"详情复盘"时展开） -->
+      <nav
+        v-if="activeTab === 'review'"
+        class="aurora-glass rounded-2xl p-1.5 grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 border border-cyan-400/20"
+      >
+        <button
+          v-for="subTab in reviewSubTabs"
+          :key="subTab.key"
+          @click="activeReviewTab = subTab.key"
+          :class="
+            activeReviewTab === subTab.key
+              ? 'bg-gradient-to-r from-amber-400/20 via-cyan-400/20 to-indigo-500/20 text-amber-200 border-amber-300/45 shadow-[0_0_16px_rgba(245,158,11,0.16)]'
+              : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] border-transparent'
+          "
+          class="sm:flex-1 sm:min-w-[150px] py-2 px-2.5 sm:px-3.5 rounded-xl border text-[11px] sm:text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5"
+        >
+          <span>{{ subTab.icon }}</span>
+          <span class="truncate">{{ subTab.label }}</span>
         </button>
       </nav>
 
       <!-- 3. 标签页内容视图 -->
-      <!-- Tab 1: 赛后全景计分板 (Overview & Deep Telemetry Drawer) -->
+      <!-- Tab 1: 简单战报 -->
       <div v-if="activeTab === 'overview'" class="space-y-6">
         <MatchTeamScoreboard
           :isRadiant="true"
@@ -310,40 +310,50 @@
         />
       </div>
 
-      <!-- Tab 2: 经济经验走势与分时成长曲线 -->
-      <MatchGraphsTab
-        v-else-if="activeTab === 'graphs'"
-        :rawJson="rawJson"
+      <!-- Tab 2: 到底谁的问题？ (DeepSeek AI 败方背锅审判分析) -->
+      <MatchAiBlameTab
+        v-else-if="activeTab === 'blame'"
+        :matchId="String(matchId)"
+        :radiantWin="Boolean(matchMeta.radiantWin)"
         :players="enrichedPlayers"
-        :highlightAccountId="highlightAccountId"
+        :initialAnalysis="matchResponse?.match?.aiAnalysis"
+        @analysisSaved="onAiAnalysisSaved"
       />
 
-      <!-- Tab 3: 出装时间轴与技能加点 -->
-      <MatchBuildsTab
-        v-else-if="activeTab === 'builds'"
+      <!-- Tab 3: 到底谁是天降猛男！ (DeepSeek AI 胜方功臣评选分析) -->
+      <MatchAiMvpTab
+        v-else-if="activeTab === 'mvp'"
+        :matchId="String(matchId)"
+        :radiantWin="Boolean(matchMeta.radiantWin)"
         :players="enrichedPlayers"
-        :highlightAccountId="highlightAccountId"
+        :initialAnalysis="matchResponse?.match?.aiMvpAnalysis"
+        @analysisSaved="onAiMvpAnalysisSaved"
       />
 
-      <!-- Tab 4: 战斗矩阵与伤害构成拆解 -->
-      <MatchCombatTab
-        v-else-if="activeTab === 'combat'"
-        :players="enrichedPlayers"
-        :highlightAccountId="highlightAccountId"
-      />
-
-      <!-- Tab 5: 团战复盘与关键战略事件轴 -->
-      <MatchTeamfightsTab
-        v-else-if="activeTab === 'teamfights'"
-        :rawJson="rawJson"
-        :players="enrichedPlayers"
-      />
-
-      <!-- Tab 6: 三路对线详情与视野辅助遥测 -->
-      <MatchLaningVisionTab
-        v-else-if="activeTab === 'laning'"
-        :players="enrichedPlayers"
-      />
+      <!-- Tab 4: 详情复盘（包含 4 个二级子模块） -->
+      <template v-else-if="activeTab === 'review'">
+        <MatchGraphsTab
+          v-if="activeReviewTab === 'graphs'"
+          :rawJson="rawJson"
+          :players="enrichedPlayers"
+          :highlightAccountId="highlightAccountId"
+        />
+        <MatchCombatTab
+          v-else-if="activeReviewTab === 'combat'"
+          :players="enrichedPlayers"
+          :highlightAccountId="highlightAccountId"
+        />
+        <MatchBuildsTab
+          v-else-if="activeReviewTab === 'builds'"
+          :players="enrichedPlayers"
+          :highlightAccountId="highlightAccountId"
+        />
+        <MatchTeamfightsTab
+          v-else-if="activeReviewTab === 'teamfights'"
+          :rawJson="rawJson"
+          :players="enrichedPlayers"
+        />
+      </template>
     </main>
   </div>
 </template>
@@ -371,7 +381,8 @@ import MatchGraphsTab from '../components/match/MatchGraphsTab.vue';
 import MatchBuildsTab from '../components/match/MatchBuildsTab.vue';
 import MatchCombatTab from '../components/match/MatchCombatTab.vue';
 import MatchTeamfightsTab from '../components/match/MatchTeamfightsTab.vue';
-import MatchLaningVisionTab from '../components/match/MatchLaningVisionTab.vue';
+import MatchAiBlameTab from '../components/match/MatchAiBlameTab.vue';
+import MatchAiMvpTab from '../components/match/MatchAiMvpTab.vue';
 
 const props = defineProps<{
   matchId: string;
@@ -388,16 +399,26 @@ const rawJson = ref<any>(null);
 // 当前高亮视角玩家 ID (从历史战绩或个人看板跳转过来时自动携带)
 const highlightAccountId = computed(() => String(route.query.accountId || ''));
 
-// 六大战术标签页配置
-type TabKey = 'overview' | 'graphs' | 'builds' | 'combat' | 'teamfights' | 'laning';
+// 一级战术标签页配置（简单战报 / AI 锐评 / 详情复盘）
+type TabKey = 'overview' | 'blame' | 'mvp' | 'review';
+type ReviewSubTabKey = 'graphs' | 'combat' | 'builds' | 'teamfights';
+
 const activeTab = ref<TabKey>('overview');
+const activeReviewTab = ref<ReviewSubTabKey>('graphs');
+
 const tabs: Array<{ key: TabKey; icon: string; label: string }> = [
-  { key: 'overview', icon: '📊', label: '全景战报与深度计分板' },
+  { key: 'overview', icon: '📊', label: '简单战报' },
+  { key: 'blame', icon: '🦹', label: '到底谁的问题？' },
+  { key: 'mvp', icon: '💪', label: '谁是天降猛男！' },
+  { key: 'review', icon: '🔍', label: '详情复盘' }
+];
+
+// 详情复盘二级子分栏配置
+const reviewSubTabs: Array<{ key: ReviewSubTabKey; icon: string; label: string }> = [
   { key: 'graphs', icon: '📈', label: '经济经验差与发育曲线' },
-  { key: 'builds', icon: '🛡️', label: '出装时间轴与技能加点' },
   { key: 'combat', icon: '⚔️', label: '对位击杀与伤害拆解' },
-  { key: 'teamfights', icon: '🔥', label: '团战复盘与战略事件轴' },
-  { key: 'laning', icon: '👁️', label: '三路对线与视野辅助' }
+  { key: 'builds', icon: '🛡️', label: '出装加点与对线视野' },
+  { key: 'teamfights', icon: '🔥', label: '团战复盘与战略事件轴' }
 ];
 
 // 比赛基础概况对象
@@ -796,25 +817,6 @@ const direScore = computed(() => {
 });
 
 // 团队四维对比条
-const teamComparisonBars = computed(() => {
-  const sum = (arr: any[], field: string) => arr.reduce((acc, p) => acc + Number(p[field] || 0), 0);
-  const makeBar = (label: string, rVal: number, dVal: number) => {
-    const total = rVal + dVal || 1;
-    return {
-      label,
-      rVal,
-      dVal,
-      rPct: Number(((rVal * 100) / total).toFixed(1))
-    };
-  };
-  return [
-    makeBar('💰 团队总净资产', sum(radiantPlayers.value, 'netWorth'), sum(direPlayers.value, 'netWorth')),
-    makeBar('⚔️ 团队英雄总伤害', sum(radiantPlayers.value, 'heroDamage'), sum(direPlayers.value, 'heroDamage')),
-    makeBar('🏰 团队建筑总伤害', sum(radiantPlayers.value, 'towerDamage'), sum(direPlayers.value, 'towerDamage')),
-    makeBar('🛡️ 团队英雄总承伤', sum(radiantPlayers.value, 'heroDamageTaken'), sum(direPlayers.value, 'heroDamageTaken'))
-  ];
-});
-
 const formatDate = (timestamp: number | undefined) => {
   if (!timestamp) return '-';
   const date = new Date(timestamp * 1000);
@@ -836,6 +838,26 @@ const goBackOrHome = () => {
     router.push(`/player/${highlightAccountId.value}`);
   } else {
     router.push('/');
+  }
+};
+
+const onAiAnalysisSaved = (text: string) => {
+  if (!matchResponse.value) {
+    matchResponse.value = { match: { aiAnalysis: text } };
+  } else if (!matchResponse.value.match) {
+    matchResponse.value.match = { aiAnalysis: text };
+  } else {
+    matchResponse.value.match.aiAnalysis = text;
+  }
+};
+
+const onAiMvpAnalysisSaved = (text: string) => {
+  if (!matchResponse.value) {
+    matchResponse.value = { match: { aiMvpAnalysis: text } };
+  } else if (!matchResponse.value.match) {
+    matchResponse.value.match = { aiMvpAnalysis: text };
+  } else {
+    matchResponse.value.match.aiMvpAnalysis = text;
   }
 };
 

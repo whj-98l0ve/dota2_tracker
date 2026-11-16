@@ -1118,20 +1118,6 @@
   },
   "78": {
     "id": 78,
-    "name": "npc_dota_hero_lone_druid",
-    "localized_name": "德鲁伊",
-    "primary_attr": "all",
-    "attack_type": "Ranged",
-    "roles": [
-      "Carry",
-      "Pusher",
-      "Durable"
-    ],
-    "img": "/apps/dota2/images/dota_react/heroes/lone_druid.png",
-    "icon": "/apps/dota2/images/dota_react/heroes/icons/lone_druid.png"
-  },
-  "79": {
-    "id": 79,
     "name": "npc_dota_hero_brewmaster",
     "localized_name": "酒仙",
     "primary_attr": "all",
@@ -1146,8 +1132,8 @@
     "img": "/apps/dota2/images/dota_react/heroes/brewmaster.png",
     "icon": "/apps/dota2/images/dota_react/heroes/icons/brewmaster.png"
   },
-  "80": {
-    "id": 80,
+  "79": {
+    "id": 79,
     "name": "npc_dota_hero_shadow_demon",
     "localized_name": "暗影恶魔",
     "primary_attr": "int",
@@ -1160,6 +1146,20 @@
     ],
     "img": "/apps/dota2/images/dota_react/heroes/shadow_demon.png",
     "icon": "/apps/dota2/images/dota_react/heroes/icons/shadow_demon.png"
+  },
+  "80": {
+    "id": 80,
+    "name": "npc_dota_hero_lone_druid",
+    "localized_name": "德鲁伊",
+    "primary_attr": "all",
+    "attack_type": "Ranged",
+    "roles": [
+      "Carry",
+      "Pusher",
+      "Durable"
+    ],
+    "img": "/apps/dota2/images/dota_react/heroes/lone_druid.png",
+    "icon": "/apps/dota2/images/dota_react/heroes/icons/lone_druid.png"
   },
   "81": {
     "id": 81,
@@ -1864,5 +1864,19 @@
     ],
     "img": "/apps/dota2/images/dota_react/heroes/kez.png",
     "icon": "/apps/dota2/images/dota_react/heroes/icons/kez.png"
+  },
+  "155": {
+    "id": 155,
+    "name": "npc_dota_hero_largo",
+    "localized_name": "朗戈",
+    "primary_attr": "str",
+    "attack_type": "Melee",
+    "roles": [
+      "Durable",
+      "Disabler",
+      "Support"
+    ],
+    "img": "/apps/dota2/images/dota_react/heroes/largo.png",
+    "icon": "/apps/dota2/images/dota_react/heroes/icons/largo.png"
   }
 }

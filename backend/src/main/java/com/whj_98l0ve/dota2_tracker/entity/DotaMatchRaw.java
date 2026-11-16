@@ -18,5 +18,9 @@ public class DotaMatchRaw {
     private Integer gameMode;
     private Integer lobbyType;
     private String rawData;
+    /** DeepSeek AI 对本场比赛败方“到底谁的问题？”的深度复盘分析结果（JSON 或文本） */
+    private String aiAnalysis;
+    /** DeepSeek AI 对本场比赛胜方“到底谁是天降猛男！”的深度复盘分析结果（JSON 或文本） */
+    private String aiMvpAnalysis;
     private LocalDateTime createdAt;
 }

@@ -1,0 +1,20 @@
+# 部署与敏感配置文件（含服务器密码、SSH密钥、DeepSeek API 密钥等）
+部署服务器/
+backend/src/main/resources/application.yaml
+
+# 后端构建与日志
+backend/target/
+*.jar
+*.war
+*.log
+
+# 前端依赖与构建产物
+frontend/node_modules/
+frontend/dist/
+
+# IDE 与系统文件
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

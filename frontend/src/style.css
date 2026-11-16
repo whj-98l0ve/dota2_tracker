@@ -2,22 +2,189 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 页面深色底色与发光特效 */
-body {
-  background-color: #0b0f19;
-  color: #e2e8f0;
-  min-height: 100vh;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-image: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
-                    radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 40%);
+/* ==========================================================================
+   毒瘤榜.GG · 极光毛玻璃主题 (Aurora Glassmorphism Design System)
+   融合深空星云流光、天辉苍翠青 (#22d3ee / #10b981) 与夜魇绯红焰 (#f43f5e / #a855f7)
+   ========================================================================== */
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #050811;
+    color: #f1f5f9;
+    min-height: 100vh;
+    font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* 定制深空毛玻璃滚动条 */
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(5, 8, 17, 0.85);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.22);
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(34, 211, 238, 0.45);
+  }
 }
 
+/* 1. 顶部悬浮极光毛玻璃导航栏 */
+.aurora-nav {
+  background: linear-gradient(180deg, rgba(7, 11, 24, 0.82) 0%, rgba(7, 11, 24, 0.65) 100%);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.65), inset 0 -1px 0 0 rgba(34, 211, 238, 0.12);
+}
+
+/* 2. 主级高透极光毛玻璃卡片 */
+.aurora-glass {
+  background: linear-gradient(135deg, rgba(19, 28, 49, 0.62) 0%, rgba(10, 15, 29, 0.76) 100%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow:
+    0 22px 48px -12px rgba(2, 6, 23, 0.78),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+    inset 0 0 24px 0 rgba(34, 211, 238, 0.025);
+  transition: border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aurora-glass-hover:hover {
+  border-color: rgba(34, 211, 238, 0.32);
+  box-shadow:
+    0 26px 56px -12px rgba(2, 6, 23, 0.85),
+    0 0 28px -6px rgba(34, 211, 238, 0.18),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
+}
+
+/* 3. 次级晶透内胆容器（用于嵌套指标盒、输入框、列表项） */
+.aurora-subcard {
+  background: linear-gradient(145deg, rgba(8, 13, 26, 0.68) 0%, rgba(5, 8, 18, 0.82) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
+  transition: all 0.25s ease;
+}
+
+.aurora-subcard:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* 4. 阵营专属毛玻璃高光修饰 */
+.aurora-radiant-card {
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.22) 0%, rgba(10, 15, 29, 0.78) 65%);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  box-shadow: 0 20px 45px -15px rgba(16, 185, 129, 0.15), inset 0 1px 0 0 rgba(52, 211, 153, 0.2);
+}
+
+.aurora-dire-card {
+  background: linear-gradient(135deg, rgba(136, 19, 55, 0.22) 0%, rgba(10, 15, 29, 0.78) 65%);
+  border: 1px solid rgba(244, 63, 94, 0.28);
+  box-shadow: 0 20px 45px -15px rgba(244, 63, 94, 0.15), inset 0 1px 0 0 rgba(251, 113, 133, 0.2);
+}
+
+/* 5. 极光主按钮（天辉青 -> 极光蓝 -> 翡翠绿） */
+.aurora-btn-primary {
+  background: linear-gradient(135deg, #22d3ee 0%, #38bdf8 45%, #34d399 100%);
+  color: #020617;
+  box-shadow:
+    0 10px 25px -5px rgba(34, 211, 238, 0.45),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.65);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aurora-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 32px -4px rgba(34, 211, 238, 0.6),
+    0 0 18px 0 rgba(52, 211, 153, 0.4),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+  filter: brightness(1.05);
+}
+
+/* 6. 极光鎏金按钮（特别鸣谢 / 荣誉殿堂） */
+.aurora-btn-gold {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #fde047 100%);
+  color: #020617;
+  box-shadow:
+    0 10px 25px -5px rgba(245, 158, 11, 0.42),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aurora-btn-gold:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 30px -4px rgba(245, 158, 11, 0.58),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.85);
+}
+
+/* 7. 深空微透网格背景与极光动画 */
+.aurora-grid-bg {
+  background-size: 48px 48px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 25%, #000 50%, transparent 100%);
+}
+
+@keyframes auroraFloat {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(25px, -20px, 0) scale(1.06);
+  }
+}
+
+.animate-aurora-slow {
+  animation: auroraFloat 14s ease-in-out infinite;
+}
+
+.animate-aurora-reverse {
+  animation: auroraFloat 18s ease-in-out infinite reverse;
+}
+
+/* 兼容保留旧辅助类名 */
 .tab-active {
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%);
-  border-bottom: 2px solid #3b82f6;
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.22) 0%, rgba(34, 211, 238, 0.05) 100%);
+  border-bottom: 2px solid #22d3ee;
   color: #ffffff;
 }
 
 .glow-green {
-  box-shadow: 0 0 15px rgba(0, 229, 153, 0.25);
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.32);
+}
+
+/* 8. 移动端适配与触控优化工具类 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 移动端底部安全区适配 */
+.pb-safe {
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 640px) {
+  .aurora-glass {
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+  }
 }

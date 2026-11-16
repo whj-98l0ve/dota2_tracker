@@ -36,10 +36,10 @@ public class OpenDotaService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * 启动时自动检查 dota_player_summary 表是否包含 remark 备注列，若旧库缺失则自动补齐
+     * 启动时自动检查数据库表新增字段（dota_player_summary.remark 与 dota_match_raw.ai_analysis），若旧库缺失则自动补齐
      */
     @PostConstruct
-    public void ensureRemarkColumnExists() {
+    public void ensureColumnsExist() {
         try {
             Integer count = jdbcTemplate.queryForObject(
                     "SELECT COUNT(1) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dota_player_summary' AND COLUMN_NAME = 'remark'",
@@ -51,6 +51,45 @@ public class OpenDotaService {
             }
         } catch (Exception e) {
             log.debug("检查/补充 remark 字段跳过: {}", e.getMessage());
+        }
+
+        try {
+            Integer aiColCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(1) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dota_match_raw' AND COLUMN_NAME = 'ai_analysis'",
+                    Integer.class
+            );
+            if (aiColCount == null || aiColCount == 0) {
+                jdbcTemplate.execute("ALTER TABLE dota_match_raw ADD COLUMN ai_analysis LONGTEXT DEFAULT NULL COMMENT 'DeepSeek AI 比赛败因与背锅分析结果缓存' AFTER raw_data");
+                log.info("✅ 已自动为 dota_match_raw 表补充 ai_analysis 字段");
+            }
+        } catch (Exception e) {
+            log.debug("检查/补充 ai_analysis 字段跳过: {}", e.getMessage());
+        }
+
+        try {
+            Integer aiMvpColCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(1) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dota_match_raw' AND COLUMN_NAME = 'ai_mvp_analysis'",
+                    Integer.class
+            );
+            if (aiMvpColCount == null || aiMvpColCount == 0) {
+                jdbcTemplate.execute("ALTER TABLE dota_match_raw ADD COLUMN ai_mvp_analysis LONGTEXT DEFAULT NULL COMMENT 'DeepSeek AI 比赛胜方天降猛男分析结果缓存' AFTER ai_analysis");
+                log.info("✅ 已自动为 dota_match_raw 表补充 ai_mvp_analysis 字段");
+            }
+        } catch (Exception e) {
+            log.debug("检查/补充 ai_mvp_analysis 字段跳过: {}", e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("""
+                    CREATE TABLE IF NOT EXISTS `dota_ai_prompt_config` (
+                      `prompt_key` varchar(64) NOT NULL COMMENT '提示词配置键: blame / mvp',
+                      `prompt_content` longtext NOT NULL COMMENT '系统提示词模板内容',
+                      `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                      PRIMARY KEY (`prompt_key`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='DeepSeek AI 提示词动态配置表'
+                    """);
+        } catch (Exception e) {
+            log.debug("检查/创建 dota_ai_prompt_config 表跳过: {}", e.getMessage());
         }
     }
 
@@ -313,6 +352,7 @@ public class OpenDotaService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void saveMatchRawAndDetails(Long matchId, JsonNode matchRoot) {
+        DotaMatchRaw existingRaw = rawMapper.selectById(matchId);
         DotaMatchRaw raw = new DotaMatchRaw();
         raw.setMatchId(matchId);
         raw.setRadiantWin(matchRoot.path("radiant_win").asBoolean());
@@ -321,6 +361,10 @@ public class OpenDotaService {
         raw.setGameMode(matchRoot.path("game_mode").asInt());
         raw.setLobbyType(matchRoot.path("lobby_type").asInt());
         raw.setRawData(matchRoot.toString());
+        // 保留已有的 AI 审判分析缓存，避免重算比赛时被清空
+        if (existingRaw != null && existingRaw.getAiAnalysis() != null) {
+            raw.setAiAnalysis(existingRaw.getAiAnalysis());
+        }
         rawMapper.insertOrUpdate(raw);
 
         boolean radiantWin = raw.getRadiantWin();
@@ -605,12 +649,13 @@ public class OpenDotaService {
     }
 
     /**
-     * 管理员接口：获取所有被关注的玩家列表及定时巡检状态
+     * 管理员接口：获取所有被关注的玩家列表（含监控中=1与已休眠=2）及定时巡检状态
      */
     public Map<String, Object> getTrackedPlayersStatus() {
         List<DotaPlayerSummary> trackedPlayers = summaryMapper.selectList(
                 new LambdaQueryWrapper<DotaPlayerSummary>()
-                        .eq(DotaPlayerSummary::getIsTracked, 1)
+                        .in(DotaPlayerSummary::getIsTracked, java.util.Arrays.asList(1, 2))
+                        .orderByAsc(DotaPlayerSummary::getIsTracked)
                         .orderByDesc(DotaPlayerSummary::getUpdatedAt)
         );
         Map<String, Object> res = new HashMap<>();
@@ -686,6 +731,25 @@ public class OpenDotaService {
         }
         String cleanRemark = (remark != null && !remark.trim().isEmpty()) ? remark.trim() : null;
         summaryMapper.updatePlayerRemark(accountId, cleanRemark);
+        return true;
+    }
+
+    /**
+     * 管理员接口：设置或解除关注账号休眠状态（sleep=true 设为 2 暂停定时监控；sleep=false 恢复为 1）
+     */
+    public boolean updateTrackedPlayerSleep(Long accountId, boolean sleep) {
+        DotaPlayerSummary existing = summaryMapper.selectById(accountId);
+        if (existing == null || Integer.valueOf(0).equals(existing.getIsTracked())) {
+            return false;
+        }
+        if (sleep) {
+            // 休眠时立即移出待巡检队列，历史数据保持不变
+            hourlySyncQueue.remove(accountId);
+            existing.setIsTracked(2);
+        } else {
+            existing.setIsTracked(1);
+        }
+        summaryMapper.updateById(existing);
         return true;
     }
 

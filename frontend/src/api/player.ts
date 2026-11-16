@@ -111,6 +111,16 @@ export const fetchMatchDetail = (matchId: string) => {
   return api.get(`/player/match/${matchId}`);
 };
 
+// 调用 DeepSeek AI 分析比赛“到底谁的问题？”（若数据库已缓存则直接返回缓存，支持最长 120 秒推理超时）
+export const fetchMatchAiBlame = (matchId: string, force = false) => {
+  return api.post(`/player/match/${matchId}/ai-blame?force=${force}`, {}, { timeout: 120000 });
+};
+
+// 调用 DeepSeek AI 分析比赛胜方“到底谁是天降猛男！”（若数据库已缓存则直接返回缓存，支持最长 120 秒推理超时）
+export const fetchMatchAiMvp = (matchId: string, force = false) => {
+  return api.post(`/player/match/${matchId}/ai-mvp?force=${force}`, {}, { timeout: 120000 });
+};
+
 // ================= 管理员关注玩家与定时同步相关接口 =================
 
 export const adminLogin = (username: string, password: string) => {
@@ -129,10 +139,28 @@ export const updateTrackedPlayerRemark = (accountId: string | number, remark: st
   return api.post(`/admin/players/${accountId}/remark`, { remark });
 };
 
+export const toggleTrackedPlayerSleep = (accountId: string | number, sleep: boolean) => {
+  return api.post(`/admin/players/${accountId}/sleep`, { sleep });
+};
+
 export const removeTrackedPlayer = (accountId: string | number) => {
   return api.delete(`/admin/players/${accountId}`);
 };
 
 export const triggerStaggeredCheckAll = () => {
   return api.post('/admin/check-all');
+};
+
+// ================= 管理员 DeepSeek AI 提示词配置相关接口 =================
+
+export const fetchAiPrompts = () => {
+  return api.get('/admin/ai-prompts');
+};
+
+export const saveAiPrompts = (blamePrompt: string, mvpPrompt: string) => {
+  return api.post('/admin/ai-prompts', { blamePrompt, mvpPrompt });
+};
+
+export const resetAiPrompts = () => {
+  return api.post('/admin/ai-prompts/reset');
 };

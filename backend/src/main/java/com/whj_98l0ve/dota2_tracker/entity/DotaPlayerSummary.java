@@ -18,7 +18,7 @@ public class DotaPlayerSummary {
     private Integer rankTier;
     /** 冠绝一世天梯具体排名（如 698 表示冠绝698） */
     private Integer leaderboardRank;
-    /** 是否为管理员关注的定时同步玩家（1: 关注, 0: 未关注） */
+    /** 是否为管理员关注的定时同步玩家（1: 关注监控中, 2: 关注已休眠, 0: 未关注） */
     private Integer isTracked;
     /** 最近一次向 OpenDota 检查同步的时间 */
     private LocalDateTime lastSyncAt;

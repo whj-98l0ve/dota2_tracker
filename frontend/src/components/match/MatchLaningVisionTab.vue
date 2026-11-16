@@ -1,13 +1,13 @@
 <template>
   <div class="space-y-6">
     <!-- 1. 三路对线期 10 分钟正面对决 (Laning Phase 10m Showdown) -->
-    <section class="bg-[#121721] border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-      <div class="pb-4 border-b border-slate-800/80">
-        <h3 class="text-base font-black text-white flex items-center gap-2">
-          <span class="w-2 h-5 bg-emerald-400 rounded-full"></span>
+    <section class="aurora-glass rounded-2xl p-4 sm:p-6">
+      <div class="pb-4 border-b border-white/10">
+        <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
+          <span class="w-2 h-5 bg-emerald-400 rounded-full shadow-[0_0_8px_#34d399]"></span>
           三路 10 分钟对线期正面对决 (10-Minute Laning Showdown)
         </h3>
-        <p class="text-xs text-slate-400 mt-1">
+        <p class="text-[11px] sm:text-xs text-slate-300/80 mt-1">
           基于前 10 分钟分路数据（正补/反补、10分钟经济、对线效率及 800 经济差阈值）还原上、中、下三路对线优劣势
         </p>
       </div>
@@ -16,7 +16,7 @@
         <div
           v-for="laneGroup in laneMatchups"
           :key="laneGroup.key"
-          class="bg-[#0b0e14]/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between"
+          class="aurora-subcard rounded-2xl p-4 flex flex-col justify-between"
         >
           <div>
             <!-- 分路标题与胜负判定徽章 -->
@@ -122,24 +122,24 @@
     </section>
 
     <!-- 2. 视野博弈、堆野、控符与操作遥测全表 (Vision, Support & APM Telemetry) -->
-    <section class="bg-[#121721] border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-      <div class="pb-4 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <section class="aurora-glass rounded-2xl p-4 sm:p-6">
+      <div class="pb-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h3 class="text-base font-black text-white flex items-center gap-2">
+          <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
             <span class="w-2 h-5 bg-cyan-400 rounded-full"></span>
             视野博弈、辅助拉野、神符控制与 APM 遥测 (Vision & Utility Telemetry)
           </h3>
-          <p class="text-xs text-slate-400 mt-1">
+          <p class="text-[11px] sm:text-xs text-slate-400 mt-1">
             全面统计真假眼安插与排眼、野怪营地拉野堆叠、神符拾取分类、操作手速 (APM) 与阵亡时长
           </p>
         </div>
 
-        <div class="flex items-center gap-4 text-xs font-mono">
-          <span class="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-            天辉总视野: {{ teamVisionStats.radiantObs }}假 / {{ teamVisionStats.radiantSen }}真 (排眼 {{ teamVisionStats.radiantDewards }})
+        <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-[11px] sm:text-xs font-mono">
+          <span class="px-2.5 sm:px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+            天辉视野: {{ teamVisionStats.radiantObs }}假/{{ teamVisionStats.radiantSen }}真 (排{{ teamVisionStats.radiantDewards }})
           </span>
-          <span class="px-3 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400">
-            夜魇总视野: {{ teamVisionStats.direObs }}假 / {{ teamVisionStats.direSen }}真 (排眼 {{ teamVisionStats.direDewards }})
+          <span class="px-2.5 sm:px-3 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400">
+            夜魇视野: {{ teamVisionStats.direObs }}假/{{ teamVisionStats.direSen }}真 (排{{ teamVisionStats.direDewards }})
           </span>
         </div>
       </div>

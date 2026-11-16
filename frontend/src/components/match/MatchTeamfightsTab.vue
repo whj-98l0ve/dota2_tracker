@@ -1,15 +1,15 @@
 <template>
   <div class="space-y-6">
     <!-- 1. 关键团战深度复盘面板 (Teamfight Telemetry) -->
-    <section class="bg-[#121721] border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-      <div class="pb-4 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <section class="aurora-glass rounded-2xl p-4 sm:p-6">
+      <div class="pb-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h3 class="text-base font-black text-white flex items-center gap-2">
-            <span class="w-2 h-5 bg-rose-500 rounded-full"></span>
+          <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
+            <span class="w-2 h-5 bg-rose-400 rounded-full shadow-[0_0_8px_#fb7185]"></span>
             关键团战复盘分析器 (Teamfights Replay Breakdown)
           </h3>
-          <p class="text-xs text-slate-400 mt-1">
-            全场共爆发 <strong class="text-cyan-400">{{ teamfights.length }}</strong> 波关键团战，点击任意团战卡片查看该波团战 10 名选手的技能释放、输出与经济得失
+          <p class="text-[11px] sm:text-xs text-slate-300/80 mt-1">
+            全场共爆发 <strong class="text-cyan-300">{{ teamfights.length }}</strong> 波关键团战，点击任意团战卡片查看该波团战 10 名选手的技能释放、输出与经济得失
           </p>
         </div>
       </div>
@@ -187,14 +187,14 @@
     <!-- 2. 赛场建筑损毁状态与全局里程碑事件轴 -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <!-- 左侧：防御塔与兵营存活状态微缩沙盘 -->
-      <section class="lg:col-span-5 bg-[#121721] border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+      <section class="lg:col-span-5 aurora-glass rounded-2xl p-4 sm:p-6 flex flex-col justify-between">
         <div>
-          <div class="pb-4 border-b border-slate-800/80">
-            <h3 class="text-base font-black text-white flex items-center gap-2">
-              <span class="w-2 h-5 bg-emerald-400 rounded-full"></span>
+          <div class="pb-4 border-b border-white/10">
+            <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
+              <span class="w-2 h-5 bg-emerald-400 rounded-full shadow-[0_0_8px_#34d399]"></span>
               终局建筑存活状态 (Structures Status)
             </h3>
-            <p class="text-xs text-slate-400 mt-1">
+            <p class="text-[11px] sm:text-xs text-slate-300/80 mt-1">
               解析 16 位防御塔与兵营状态码，展示终局双方建筑完整度
             </p>
           </div>
@@ -306,37 +306,37 @@
       </section>
 
       <!-- 右侧：全局关键战略事件时间轴 (Objectives & Buybacks) -->
-      <section class="lg:col-span-7 bg-[#121721] border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-        <div class="pb-4 border-b border-slate-800/80 flex items-center justify-between">
+      <section class="lg:col-span-7 aurora-glass rounded-2xl p-4 sm:p-6">
+        <div class="pb-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 class="text-base font-black text-white flex items-center gap-2">
+            <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
               <span class="w-2 h-5 bg-amber-400 rounded-full"></span>
               赛场战略里程碑时间轴 (Objectives & Buybacks Log)
             </h3>
-            <p class="text-xs text-slate-400 mt-1">
+            <p class="text-[11px] sm:text-xs text-slate-400 mt-1">
               一血、肉山击杀、不朽之守护拾取、防御塔兵营摧毁、信使阵亡与关键买活完整时间线
             </p>
           </div>
-          <span class="text-xs font-mono text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded border border-cyan-800/50">
+          <span class="text-[11px] sm:text-xs font-mono text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded border border-cyan-800/50 shrink-0">
             共 {{ timelineEvents.length }} 个节点
           </span>
         </div>
 
-        <div class="mt-4 max-h-[420px] overflow-y-auto pr-2 space-y-2 font-mono text-xs">
+        <div class="mt-4 max-h-[420px] overflow-y-auto pr-1 sm:pr-2 space-y-2 font-mono text-xs">
           <div
             v-for="(ev, idx) in timelineEvents"
             :key="idx"
-            class="flex items-center justify-between p-2.5 rounded-xl bg-[#0b0e14]/90 border border-slate-800/80 hover:border-slate-700 transition-colors"
+            class="flex items-start sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-[#0b0e14]/90 border border-slate-800/80 hover:border-slate-700 transition-colors"
           >
-            <div class="flex items-center gap-3">
-              <span class="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold text-[11px] w-14 text-center">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+              <span class="px-1.5 sm:px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold text-[10px] sm:text-[11px] w-12 sm:w-14 text-center shrink-0">
                 {{ formatGameTime(ev.time) }}
               </span>
-              <span class="text-base">{{ ev.icon }}</span>
-              <img v-if="ev.heroImg" :src="ev.heroImg" class="w-8 h-5 rounded object-cover" />
-              <span :class="ev.colorClass" class="font-semibold">{{ ev.text }}</span>
+              <span class="text-sm sm:text-base shrink-0">{{ ev.icon }}</span>
+              <img v-if="ev.heroImg" :src="ev.heroImg" class="w-7 sm:w-8 h-5 rounded object-cover shrink-0" />
+              <span :class="ev.colorClass" class="font-semibold text-[11px] sm:text-xs break-words">{{ ev.text }}</span>
             </div>
-            <span class="text-[10px] px-2 py-0.5 rounded border border-slate-800 text-slate-400">
+            <span class="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded border border-slate-800 text-slate-400 shrink-0">
               {{ ev.tag }}
             </span>
           </div>

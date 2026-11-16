@@ -160,7 +160,7 @@ public interface DotaMatchPlayerMapper extends BaseMapper<DotaMatchPlayer> {
                 END AS is_party
             FROM dota_match_player mp
             JOIN dota_player_summary s ON mp.account_id = s.account_id
-            WHERE s.is_tracked = 1
+            WHERE s.is_tracked IN (1, 2)
             GROUP BY mp.match_id
         ) t
     """)
@@ -182,7 +182,7 @@ public interface DotaMatchPlayerMapper extends BaseMapper<DotaMatchPlayer> {
                 END AS is_party
             FROM dota_match_player mp
             JOIN dota_player_summary s ON mp.account_id = s.account_id
-            WHERE s.is_tracked = 1
+            WHERE s.is_tracked IN (1, 2)
             GROUP BY mp.match_id
         ) t
         GROUP BY match_date
@@ -205,7 +205,7 @@ public interface DotaMatchPlayerMapper extends BaseMapper<DotaMatchPlayer> {
             MAX(mp.start_time) AS lastMatchTime
         FROM dota_player_summary s
         LEFT JOIN dota_match_player mp ON s.account_id = mp.account_id
-        WHERE s.is_tracked = 1
+        WHERE s.is_tracked IN (1, 2)
         GROUP BY s.account_id, s.personaname, s.remark, s.avatar, s.rank_tier, s.leaderboard_rank, s.total_matches, s.win_rate
         ORDER BY lastMatchTime DESC, s.total_matches DESC
     """)

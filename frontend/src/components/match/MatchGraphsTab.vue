@@ -1,59 +1,61 @@
 <template>
   <div class="space-y-6">
     <!-- 1. 团队经济差与经验差走势图 -->
-    <section class="bg-[#121721] border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+    <section class="aurora-glass rounded-2xl p-4 sm:p-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-white/10">
         <div>
-          <h3 class="text-base font-black text-white flex items-center gap-2">
-            <span class="w-2 h-5 bg-cyan-400 rounded-full"></span>
+          <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
+            <span class="w-2 h-5 bg-cyan-300 rounded-full shadow-[0_0_8px_#67e8f9]"></span>
             团队经济差与经验差走势 (Gold & XP Advantage)
           </h3>
-          <p class="text-xs text-slate-400 mt-1">
-            零轴上方 <span class="text-emerald-400 font-bold">翠绿区</span> 代表天辉领先，零轴下方 <span class="text-rose-400 font-bold">绯红区</span> 代表夜魇领先（移动鼠标查看每分钟精确差值）
+          <p class="text-[11px] sm:text-xs text-slate-300/80 mt-1">
+            零轴上方 <span class="text-emerald-300 font-bold">翠绿区</span> 代表天辉领先，零轴下方 <span class="text-rose-400 font-bold">绯红区</span> 代表夜魇领先（滑动或移动鼠标查看每分钟差值）
           </p>
         </div>
 
         <!-- 极值统计徽章 -->
-        <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
-          <div class="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-            天辉最大经济领先: <strong>+{{ maxRadiantGold.toLocaleString() }}</strong> ({{ maxRadiantMin }}:00)
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] sm:text-xs font-mono">
+          <div class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-emerald-400/15 border border-emerald-400/35 text-emerald-300 backdrop-blur-md">
+            天辉最大领先: <strong>+{{ maxRadiantGold.toLocaleString() }}</strong> ({{ maxRadiantMin }}:00)
           </div>
-          <div class="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400">
-            夜魇最大经济领先: <strong>+{{ Math.abs(minRadiantGold).toLocaleString() }}</strong> ({{ minRadiantMin }}:00)
+          <div class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-rose-500/15 border border-rose-400/35 text-rose-300 backdrop-blur-md">
+            夜魇最大领先: <strong>+{{ Math.abs(minRadiantGold).toLocaleString() }}</strong> ({{ minRadiantMin }}:00)
           </div>
         </div>
       </div>
 
       <!-- SVG 交互式面积折线图 -->
-      <div v-if="goldAdv.length > 0" class="mt-6 relative select-none">
+      <div v-if="goldAdv.length > 0" class="mt-4 sm:mt-6 relative select-none">
         <!-- 悬停分钟实时指示栏 -->
-        <div class="flex flex-wrap items-center justify-between mb-3 px-3 py-2 rounded-xl bg-[#0b0e14] border border-slate-800 text-xs font-mono">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 px-3 sm:px-3.5 py-2 rounded-xl aurora-subcard text-[11px] sm:text-xs font-mono">
           <div class="flex items-center gap-2">
-            <span class="text-slate-400">当前时间点:</span>
-            <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold">{{ activeHoverMin }}:00</span>
+            <span class="text-slate-300">当前时间点:</span>
+            <span class="px-2 py-0.5 rounded bg-cyan-400/20 text-cyan-200 font-bold">{{ activeHoverMin }}:00</span>
           </div>
-          <div class="flex items-center gap-6">
+          <div class="flex items-center gap-4 sm:gap-6">
             <div>
-              <span class="text-slate-400 mr-1.5">经济差 (Gold):</span>
-              <span :class="hoverGoldVal >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'">
+              <span class="text-slate-400 mr-1">经济差:</span>
+              <span :class="hoverGoldVal >= 0 ? 'text-emerald-300 font-bold' : 'text-rose-400 font-bold'">
                 {{ hoverGoldVal >= 0 ? `天辉 +${hoverGoldVal.toLocaleString()}` : `夜魇 +${Math.abs(hoverGoldVal).toLocaleString()}` }}
               </span>
             </div>
             <div>
-              <span class="text-slate-400 mr-1.5">经验差 (XP):</span>
-              <span :class="hoverXpVal >= 0 ? 'text-cyan-400 font-bold' : 'text-purple-400 font-bold'">
+              <span class="text-slate-400 mr-1">经验差:</span>
+              <span :class="hoverXpVal >= 0 ? 'text-cyan-300 font-bold' : 'text-purple-300 font-bold'">
                 {{ hoverXpVal >= 0 ? `天辉 +${hoverXpVal.toLocaleString()}` : `夜魇 +${Math.abs(hoverXpVal).toLocaleString()}` }}
               </span>
             </div>
           </div>
         </div>
 
-        <div class="relative w-full h-72 bg-[#0b0e14]/90 rounded-xl border border-slate-800/80 p-4 overflow-hidden">
+        <div class="relative w-full h-56 sm:h-72 aurora-subcard rounded-xl p-3 sm:p-4 overflow-hidden">
           <svg
-            class="w-full h-full overflow-visible"
+            class="w-full h-full overflow-visible touch-pan-y"
             :viewBox="`0 0 ${svgW} ${svgH}`"
             preserveAspectRatio="none"
             @mousemove="onAdvMouseMove"
+            @touchstart.passive="onAdvTouchMove"
+            @touchmove.passive="onAdvTouchMove"
             @mouseleave="hoverIndex = null"
           >
             <defs>
@@ -120,11 +122,11 @@
         </div>
 
         <!-- 图例说明 -->
-        <div class="flex items-center justify-center gap-6 mt-3 text-xs font-mono text-slate-400">
-          <span class="flex items-center gap-2"><span class="w-4 h-0.5 bg-amber-400 inline-block"></span>团队经济差 (Gold Adv)</span>
-          <span class="flex items-center gap-2"><span class="w-4 h-0.5 bg-sky-400 border-b border-dashed inline-block"></span>团队经验差 (XP Adv)</span>
-          <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500/40 border border-emerald-400 inline-block"></span>天辉优势域</span>
-          <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-rose-500/40 border border-rose-400 inline-block"></span>夜魇优势域</span>
+        <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 sm:gap-6 mt-3 text-[11px] sm:text-xs font-mono text-slate-400">
+          <span class="flex items-center gap-1.5"><span class="w-4 h-0.5 bg-amber-400 inline-block"></span>团队经济差</span>
+          <span class="flex items-center gap-1.5"><span class="w-4 h-0.5 bg-sky-400 border-b border-dashed inline-block"></span>团队经验差</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500/40 border border-emerald-400 inline-block"></span>天辉优势域</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-rose-500/40 border border-rose-400 inline-block"></span>夜魇优势域</span>
         </div>
       </div>
       <div v-else class="py-12 text-center text-slate-500 text-xs font-mono">
@@ -133,37 +135,37 @@
     </section>
 
     <!-- 2. 10名选手个人分时成长曲线对比 -->
-    <section class="bg-[#121721] border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+    <section class="aurora-glass rounded-2xl p-4 sm:p-6">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-white/10">
         <div>
-          <h3 class="text-base font-black text-white flex items-center gap-2">
-            <span class="w-2 h-5 bg-emerald-400 rounded-full"></span>
+          <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
+            <span class="w-2 h-5 bg-emerald-400 rounded-full shadow-[0_0_8px_#34d399]"></span>
             选手分时个人发育曲线 (Player Telemetry Curves)
           </h3>
-          <p class="text-xs text-slate-400 mt-1">
+          <p class="text-[11px] sm:text-xs text-slate-300/80 mt-1">
             对比 10 名选手每分钟的净资产、累计经济、累计经验与正反补走势（点击下方英雄按钮可单独开关某位选手）
           </p>
         </div>
 
         <!-- 指标切换与快捷过滤按钮组 -->
         <div class="flex flex-wrap items-center gap-2">
-          <div class="flex bg-[#0b0e14] p-1 rounded-xl border border-slate-800 text-xs font-mono">
+          <div class="flex flex-wrap aurora-subcard p-1 rounded-xl text-[11px] sm:text-xs font-mono">
             <button
               v-for="m in metricOptions"
               :key="m.key"
               @click="selectedMetric = m.key"
-              :class="selectedMetric === m.key ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold' : 'text-slate-400 hover:text-slate-200'"
-              class="px-3 py-1 rounded-lg transition-all"
+              :class="selectedMetric === m.key ? 'bg-cyan-400/20 text-cyan-200 border border-cyan-300/40 font-bold' : 'text-slate-400 hover:text-slate-200'"
+              class="px-2 sm:px-3 py-1 rounded-lg transition-all"
             >
               {{ m.label }}
             </button>
           </div>
 
-          <div class="flex bg-[#0b0e14] p-1 rounded-xl border border-slate-800 text-xs font-mono">
-            <button @click="filterPreset('all')" class="px-2.5 py-1 rounded-lg text-slate-300 hover:bg-slate-800">全员</button>
-            <button @click="filterPreset('cores')" class="px-2.5 py-1 rounded-lg text-amber-400 hover:bg-slate-800">仅核心(Pos1/2)</button>
-            <button @click="filterPreset('radiant')" class="px-2.5 py-1 rounded-lg text-emerald-400 hover:bg-slate-800">仅天辉</button>
-            <button @click="filterPreset('dire')" class="px-2.5 py-1 rounded-lg text-rose-400 hover:bg-slate-800">仅夜魇</button>
+          <div class="flex flex-wrap aurora-subcard p-1 rounded-xl text-[11px] sm:text-xs font-mono">
+            <button @click="filterPreset('all')" class="px-2 sm:px-2.5 py-1 rounded-lg text-slate-200 hover:bg-white/10">全员</button>
+            <button @click="filterPreset('cores')" class="px-2 sm:px-2.5 py-1 rounded-lg text-amber-300 hover:bg-white/10">仅核心(Pos1/2)</button>
+            <button @click="filterPreset('radiant')" class="px-2 sm:px-2.5 py-1 rounded-lg text-emerald-300 hover:bg-white/10">仅天辉</button>
+            <button @click="filterPreset('dire')" class="px-2 sm:px-2.5 py-1 rounded-lg text-rose-400 hover:bg-white/10">仅夜魇</button>
           </div>
         </div>
       </div>
@@ -175,8 +177,8 @@
           :key="p.playerSlot"
           @click="togglePlayerSlot(p.playerSlot)"
           :class="[
-            hiddenSlots.has(p.playerSlot) ? 'opacity-35 bg-[#0b0e14] border-slate-800' : 'bg-[#0b0e14] border-slate-700 shadow-sm',
-            p.isRadiant ? 'hover:border-emerald-500/50' : 'hover:border-rose-500/50'
+            hiddenSlots.has(p.playerSlot) ? 'opacity-35 aurora-subcard' : 'aurora-subcard border-white/15 shadow-sm',
+            p.isRadiant ? 'hover:border-emerald-400/50' : 'hover:border-rose-400/50'
           ]"
           class="flex items-center justify-between px-2.5 py-1.5 rounded-xl border text-left transition-all"
         >
@@ -185,7 +187,7 @@
             <img :src="getHeroAvatar(p.heroId)" class="w-7 h-5 rounded object-cover shrink-0" />
             <div class="truncate">
               <div class="text-[11px] font-bold text-slate-200 truncate">{{ getHeroName(p.heroId) }}</div>
-              <div class="text-[9px] text-slate-500 font-mono truncate">{{ p.personaname }}</div>
+              <div class="text-[9px] text-slate-400 font-mono truncate">{{ p.personaname }}</div>
             </div>
           </div>
           <span class="text-[11px] font-mono font-bold ml-1" :style="{ color: getPlayerColor(p.playerSlot) }">
@@ -197,10 +199,10 @@
       <!-- 多人折线 SVG + 同步动态排序悬浮面板（仿赛事级分时数据浮窗） -->
       <div
         v-if="maxSeriesLength > 1"
-        class="mt-4 relative w-full h-96 bg-[#0b0e14]/95 rounded-xl border border-slate-800/80 pt-4 pb-8 pl-14 pr-4 select-none"
+        class="mt-4 relative w-full h-80 sm:h-96 aurora-subcard rounded-xl pt-4 pb-8 pl-11 sm:pl-14 pr-3 sm:pr-4 select-none"
       >
         <!-- 左侧 Y 轴刻度标签 -->
-        <div class="absolute left-2 top-4 bottom-8 w-10 flex flex-col justify-between text-right text-[11px] font-mono text-slate-400 pointer-events-none">
+        <div class="absolute left-1.5 sm:left-2 top-4 bottom-8 w-8 sm:w-10 flex flex-col justify-between text-right text-[10px] sm:text-[11px] font-mono text-slate-400 pointer-events-none">
           <span>{{ formatAxisTick(maxPlayerMetricVal) }}</span>
           <span>{{ formatAxisTick(maxPlayerMetricVal * 0.75) }}</span>
           <span>{{ formatAxisTick(maxPlayerMetricVal * 0.5) }}</span>
@@ -209,7 +211,7 @@
         </div>
 
         <!-- 底部 X 轴起止时间标签 -->
-        <div class="absolute left-14 right-4 bottom-2 flex justify-between text-[11px] font-mono text-slate-400 pointer-events-none">
+        <div class="absolute left-11 sm:left-14 right-3 sm:right-4 bottom-2 flex justify-between text-[10px] sm:text-[11px] font-mono text-slate-400 pointer-events-none">
           <span>00:00</span>
           <span>{{ String(Math.floor((maxSeriesLength - 1) / 2)).padStart(2, '0') }}:00</span>
           <span>{{ String(maxSeriesLength - 1).padStart(2, '0') }}:00</span>
@@ -217,10 +219,12 @@
 
         <div class="relative w-full h-full">
           <svg
-            class="w-full h-full overflow-visible cursor-crosshair"
+            class="w-full h-full overflow-visible cursor-crosshair touch-pan-y"
             :viewBox="`0 0 ${svgW} ${svgH}`"
             preserveAspectRatio="none"
             @mousemove="onPlayerChartMove"
+            @touchstart.passive="onPlayerChartTouchMove"
+            @touchmove.passive="onPlayerChartTouchMove"
             @mouseleave="playerHoverIndex = null"
           >
             <!-- 水平网格线 -->
@@ -263,32 +267,32 @@
             </g>
           </svg>
 
-          <!-- 跟随时间轴竖线的动态从高到低排序浮窗（英雄头像 + 当前数值 + 本分钟增量） -->
+          <!-- 跟随时间轴竖线的动态从高到低排序浮窗（英雄头像 + 当前数值 + 本分钟增量，桌面端与移动端均保留） -->
           <div
             v-if="sortedHoverPlayers.length > 0"
-            class="absolute top-2 z-20 pointer-events-none bg-[#0d1119]/95 backdrop-blur-md border border-slate-700/90 rounded-xl px-3 py-2.5 shadow-2xl min-w-[175px] transition-all duration-75"
+            class="absolute top-1.5 sm:top-2 z-20 pointer-events-none bg-[#0d1119]/95 backdrop-blur-md border border-slate-700/90 rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2.5 shadow-2xl min-w-[140px] sm:min-w-[175px] transition-all duration-75"
             :style="getFloatingTooltipStyle(playerHoverIdx, maxSeriesLength)"
           >
-            <div class="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-200 pb-1.5 mb-1.5 border-b border-slate-800">
+            <div class="flex items-center gap-1.5 text-[11px] sm:text-xs font-mono font-bold text-slate-200 pb-1 sm:pb-1.5 mb-1 sm:mb-1.5 border-b border-slate-800">
               <span>🕒</span>
               <span>{{ String(playerHoverIdx).padStart(2, '0') }}:00</span>
             </div>
-            <div class="space-y-1 font-mono text-xs">
+            <div class="space-y-0.5 sm:space-y-1 font-mono text-[11px] sm:text-xs">
               <div
                 v-for="item in sortedHoverPlayers"
                 :key="item.playerSlot"
-                class="flex items-center justify-between gap-3"
+                class="flex items-center justify-between gap-2 sm:gap-3"
               >
-                <div class="flex items-center gap-2 min-w-0">
-                  <img :src="getHeroAvatar(item.heroId)" class="w-6 h-4 rounded-sm object-cover border border-slate-700 shrink-0" />
+                <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                  <img :src="getHeroAvatar(item.heroId)" class="w-5 sm:w-6 h-3.5 sm:h-4 rounded-sm object-cover border border-slate-700 shrink-0" />
                   <span
-                    class="font-black text-[12px] tracking-tight"
+                    class="font-black text-[11px] sm:text-[12px] tracking-tight"
                     :style="{ color: item.color }"
                   >
                     {{ item.value.toLocaleString() }}
                   </span>
                 </div>
-                <span class="text-[11px] text-slate-400 shrink-0">
+                <span class="text-[10px] sm:text-[11px] text-slate-400 shrink-0">
                   ({{ item.delta >= 0 ? item.delta.toLocaleString() : item.delta }})
                 </span>
               </div>
@@ -403,6 +407,15 @@ const onAdvMouseMove = (e: MouseEvent) => {
   const target = e.currentTarget as SVGElement;
   const rect = target.getBoundingClientRect();
   const relX = Math.max(0, Math.min(1, (e.clientX - rect.left) / (rect.width || 1)));
+  hoverIndex.value = Math.round(relX * (goldAdv.value.length - 1));
+};
+
+// 移动端手指触摸滑动支持
+const onAdvTouchMove = (e: TouchEvent) => {
+  if (!e.touches || e.touches.length === 0) return;
+  const target = e.currentTarget as SVGElement;
+  const rect = target.getBoundingClientRect();
+  const relX = Math.max(0, Math.min(1, (e.touches[0].clientX - rect.left) / (rect.width || 1)));
   hoverIndex.value = Math.round(relX * (goldAdv.value.length - 1));
 };
 
@@ -538,18 +551,18 @@ const formatAxisTick = (val: number): string => {
   return String(rounded);
 };
 
-// 计算跟随竖线的浮窗位置（靠左时显示在竖线右侧，靠右时自动切到竖线左侧防止超出边界）
+// 计算跟随竖线的浮窗位置（靠左时显示在竖线右侧，过半时自动切到竖线左侧防止超出边界）
 const getFloatingTooltipStyle = (idx: number, totalLen: number) => {
   const ratio = totalLen > 1 ? idx / (totalLen - 1) : 0;
   const pct = Number((ratio * 100).toFixed(2));
-  if (ratio > 0.62) {
+  if (ratio > 0.5) {
     return {
-      left: `calc(${pct}% - 12px)`,
+      left: `calc(${pct}% - 10px)`,
       transform: 'translateX(-100%)'
     };
   }
   return {
-    left: `calc(${pct}% + 12px)`
+    left: `calc(${pct}% + 10px)`
   };
 };
 
@@ -557,6 +570,15 @@ const onPlayerChartMove = (e: MouseEvent) => {
   const target = e.currentTarget as SVGElement;
   const rect = target.getBoundingClientRect();
   const relX = Math.max(0, Math.min(1, (e.clientX - rect.left) / (rect.width || 1)));
+  playerHoverIndex.value = Math.round(relX * (maxSeriesLength.value - 1));
+};
+
+// 移动端手指触摸滑动支持
+const onPlayerChartTouchMove = (e: TouchEvent) => {
+  if (!e.touches || e.touches.length === 0) return;
+  const target = e.currentTarget as SVGElement;
+  const rect = target.getBoundingClientRect();
+  const relX = Math.max(0, Math.min(1, (e.touches[0].clientX - rect.left) / (rect.width || 1)));
   playerHoverIndex.value = Math.round(relX * (maxSeriesLength.value - 1));
 };
 </script>

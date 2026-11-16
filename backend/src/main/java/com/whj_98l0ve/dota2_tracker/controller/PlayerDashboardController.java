@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.whj_98l0ve.dota2_tracker.entity.*;
 import com.whj_98l0ve.dota2_tracker.mapper.*;
+import com.whj_98l0ve.dota2_tracker.service.DeepSeekService;
 import com.whj_98l0ve.dota2_tracker.service.OpenDotaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,7 @@ import java.util.Map;
 public class PlayerDashboardController {
 
     private final OpenDotaService openDotaService;
+    private final DeepSeekService deepSeekService;
     private final DotaPlayerSummaryMapper summaryMapper;
     private final DotaPlayerHeroStatsMapper heroStatsMapper;
     private final DotaMatchPlayerMapper matchPlayerMapper;
@@ -187,5 +189,29 @@ public class PlayerDashboardController {
             }
         }
         return res;
+    }
+
+    /**
+     * 6. 调用或读取缓存的 DeepSeek AI 比赛败因与“到底谁的问题？”分析报告
+     * 若数据库中已有缓存则直接从数据库返回；否则调用 DeepSeek API 生成并落库保存
+     */
+    @PostMapping("/match/{matchId}/ai-blame")
+    public Map<String, Object> analyzeMatchBlame(
+            @PathVariable Long matchId,
+            @RequestParam(value = "force", defaultValue = "false") boolean force
+    ) {
+        return deepSeekService.analyzeMatchBlame(matchId, force);
+    }
+
+    /**
+     * 7. 调用或读取缓存的 DeepSeek AI 比赛胜方“到底谁是天降猛男！”分析报告
+     * 若数据库中已有缓存则直接从数据库返回；否则调用 DeepSeek API 生成并落库保存
+     */
+    @PostMapping("/match/{matchId}/ai-mvp")
+    public Map<String, Object> analyzeMatchMvp(
+            @PathVariable Long matchId,
+            @RequestParam(value = "force", defaultValue = "false") boolean force
+    ) {
+        return deepSeekService.analyzeMatchMvp(matchId, force);
     }
 }

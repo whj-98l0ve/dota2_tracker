@@ -1,30 +1,37 @@
 <template>
-  <div class="bg-[#0b0e14] text-slate-200 min-h-screen font-sans antialiased pb-16 selection:bg-cyan-500 selection:text-white">
-    <!-- 顶部导航栏 -->
-    <header class="border-b border-slate-800/80 bg-[#0c1220]/90 backdrop-blur sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 p-[1.5px] flex items-center justify-center shadow-lg shadow-cyan-500/20">
-            <div class="w-full h-full bg-[#0b0f19] rounded-[7px] flex items-center justify-center text-cyan-400 font-black" @click="router.push('/')" style="cursor: pointer;">
+  <div class="text-slate-100 min-h-screen font-sans antialiased pb-16">
+    <!-- 顶部极光毛玻璃导航栏（移动端紧凑适配） -->
+    <header class="aurora-nav sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
+        <div class="flex items-center space-x-2.5 sm:space-x-3.5 min-w-0">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 p-[1.5px] flex items-center justify-center shadow-lg shadow-cyan-400/25 shrink-0">
+            <div
+              class="w-full h-full bg-[#060a15]/90 backdrop-blur-md rounded-[10px] flex items-center justify-center text-cyan-300 font-black text-sm sm:text-base cursor-pointer"
+              @click="router.push('/')"
+            >
               毒
             </div>
           </div>
-          <div class="flex items-baseline space-x-2">
-            <span class="text-xl font-black tracking-wide text-white">毒瘤榜<span class="text-cyan-400">.GG</span></span>
-            <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-400 font-bold border border-cyan-800/50">MOBA PRO STATS</span>
+          <div class="flex items-baseline space-x-2 truncate">
+            <span class="text-lg sm:text-xl font-black tracking-wide text-white cursor-pointer truncate" @click="router.push('/')">
+              毒瘤榜<span class="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent">.GG</span>
+            </span>
+            <span class="hidden sm:inline-block text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/[0.06] text-cyan-200 font-bold border border-white/15 backdrop-blur-md">
+              MOBA PRO STATS
+            </span>
           </div>
         </div>
 
         <!-- 顶部右侧：返回首页与状态标识 -->
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
           <button
             @click="router.push('/')"
-            class="px-3 py-1.5 bg-[#121721] hover:bg-slate-800 text-slate-300 border border-slate-700/80 rounded-lg text-xs transition-colors"
+            class="px-3 sm:px-3.5 py-1 sm:py-1.5 bg-white/[0.05] hover:bg-white/[0.12] text-slate-200 border border-white/15 hover:border-cyan-400/35 rounded-full text-[11px] sm:text-xs font-medium backdrop-blur-md transition-all"
           >
             ← 返回首页
           </button>
-          <div class="flex items-center gap-1.5 text-xs text-slate-400 bg-[#121721] px-3 py-1.5 rounded-lg border border-slate-800">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-300 aurora-subcard px-3.5 py-1.5 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
             <span>Dota 2 深度战绩模式</span>
           </div>
         </div>
@@ -32,54 +39,60 @@
     </header>
 
     <!-- 主体容器 -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-4 sm:mt-6 space-y-5 sm:space-y-6">
 
       <!-- 1. 玩家资料横幅与综合评级卡 -->
-      <section class="rounded-2xl bg-[#121721] border border-slate-800/80 p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-xl shadow-black/40 relative overflow-hidden">
-        <div class="flex items-center gap-5">
-          <div class="relative">
-            <img 
-              :src="summary?.avatar || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=120'" 
-              class="w-20 h-20 rounded-2xl border-2 border-slate-700/80 object-cover shadow-md"
-            />
-            <span class="absolute -bottom-2 -left-2 px-2 py-0.5 rounded text-[10px] font-black tracking-wider bg-amber-500 text-black shadow-md flex items-center gap-0.5 whitespace-nowrap">
+      <section class="rounded-2xl sm:rounded-3xl aurora-glass p-4 sm:p-7 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 sm:gap-6 relative overflow-hidden">
+        <!-- 内部极光光晕点缀 -->
+        <div class="absolute -top-16 -left-16 w-64 h-64 bg-cyan-400/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-16 -right-16 w-64 h-64 bg-fuchsia-500/12 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex items-center gap-3.5 sm:gap-5 w-full lg:w-auto">
+          <div class="relative shrink-0">
+            <div class="p-0.5 rounded-2xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-rose-400 shadow-lg shadow-cyan-500/20">
+              <img 
+                :src="summary?.avatar || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=120'" 
+                class="w-16 h-16 sm:w-20 sm:h-20 rounded-[14px] object-cover bg-[#050811]"
+              />
+            </div>
+            <span class="absolute -bottom-2 -left-1 sm:-left-2 px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-wider aurora-btn-gold shadow-lg flex items-center gap-0.5 whitespace-nowrap">
               👑 {{ rankBadgeText }}
             </span>
           </div>
-          <div>
-            <div class="flex items-center gap-3">
-              <h1 class="text-2xl font-black text-white tracking-wide">
-                {{ summary?.personaname || '未同步玩家' }}<span v-if="summary?.remark" class="text-amber-400 text-lg font-bold ml-1">（{{ summary.remark }}）</span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h1 class="text-lg sm:text-3xl font-black text-white tracking-wide drop-shadow-sm break-all">
+                {{ summary?.personaname || '未同步玩家' }}<span v-if="summary?.remark" class="text-amber-300 text-sm sm:text-lg font-bold ml-1">（{{ summary.remark }}）</span>
               </h1>
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                数据库记录对局: {{ totalGamesInDb }} 场
+              <span class="px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-emerald-400/12 text-emerald-300 border border-emerald-400/30 backdrop-blur-md flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+                收录对局: {{ totalGamesInDb }} 场
               </span>
             </div>
-            <div class="text-xs text-slate-400 mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            <div class="text-[11px] sm:text-xs text-slate-300/80 mt-2 flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1">
               <span>Steam32 ID: <strong class="text-white font-mono">{{ currentAccountId }}</strong></span>
-              <span>核心本命位置: <strong class="text-cyan-400">{{ mainPositionText }}</strong></span>
-              <span>数据来源: <strong class="text-slate-300">本地数据库真实对局</strong></span>
+              <span>本命位置: <strong class="text-cyan-300">{{ mainPositionText }}</strong></span>
+              <span class="hidden sm:inline">数据来源: <strong class="text-slate-200">本地数据库真实对局</strong></span>
             </div>
           </div>
         </div>
 
-        <!-- 3 个右侧 KPI 方块 (全部根据本地库动态算) -->
-        <div class="grid grid-cols-3 gap-3 w-full lg:w-auto">
-          <div class="bg-[#0b0e14]/70 p-3.5 rounded-xl border border-slate-800 text-center min-w-[110px]">
-            <span class="text-[11px] text-slate-400 block mb-1">近期战力评级</span>
-            <span class="text-2xl font-black font-mono text-amber-400">{{ perfGrade }}</span>
-            <span class="text-[10px] text-emerald-400 block mt-0.5">综合评分 {{ calcPerfScore }}</span>
+        <!-- 3 个右侧 KPI 方块 (移动端自适应三等分不溢出) -->
+        <div class="relative z-10 grid grid-cols-3 gap-2 sm:gap-3 w-full lg:w-auto">
+          <div class="aurora-subcard p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl text-center min-w-0 sm:min-w-[112px] hover:border-amber-400/40">
+            <span class="text-[10px] sm:text-[11px] text-slate-400 block mb-0.5 sm:mb-1 truncate">近期战力评级</span>
+            <span class="text-xl sm:text-2xl font-black font-mono text-amber-300 drop-shadow-[0_0_10px_rgba(251,191,36,0.35)]">{{ perfGrade }}</span>
+            <span class="text-[9px] sm:text-[10px] text-emerald-300 block mt-0.5 truncate">评分 {{ calcPerfScore }}</span>
           </div>
-          <div class="bg-[#0b0e14]/70 p-3.5 rounded-xl border border-slate-800 text-center min-w-[110px]">
-            <span class="text-[11px] text-slate-400 block mb-1">MVP 获得率</span>
-            <span class="text-2xl font-black font-mono text-cyan-400">{{ localMvpRate }}%</span>
-            <span class="text-[10px] text-slate-400 block mt-0.5">局内卓越贡献</span>
+          <div class="aurora-subcard p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl text-center min-w-0 sm:min-w-[112px] hover:border-cyan-400/40">
+            <span class="text-[10px] sm:text-[11px] text-slate-400 block mb-0.5 sm:mb-1 truncate">MVP 获得率</span>
+            <span class="text-xl sm:text-2xl font-black font-mono text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.35)]">{{ localMvpRate }}%</span>
+            <span class="text-[9px] sm:text-[10px] text-slate-400 block mt-0.5 truncate">局内卓越贡献</span>
           </div>
-          <div class="bg-[#0b0e14]/70 p-3.5 rounded-xl border border-slate-800 text-center min-w-[110px]">
-            <span class="text-[11px] text-slate-400 block mb-1">线优综合率</span>
-            <span class="text-2xl font-black font-mono text-emerald-400">{{ summary?.laneWinRate || 0 }}%</span>
-            <span class="text-[10px] text-slate-400 block mt-0.5">对线期统治</span>
+          <div class="aurora-subcard p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl text-center min-w-0 sm:min-w-[112px] hover:border-emerald-400/40">
+            <span class="text-[10px] sm:text-[11px] text-slate-400 block mb-0.5 sm:mb-1 truncate">线优综合率</span>
+            <span class="text-xl sm:text-2xl font-black font-mono text-emerald-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.35)]">{{ summary?.laneWinRate || 0 }}%</span>
+            <span class="text-[9px] sm:text-[10px] text-slate-400 block mt-0.5 truncate">对线期统治</span>
           </div>
         </div>
       </section>
@@ -87,68 +100,68 @@
       <!-- 2. 四大核心指标卡片 -->
       <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- 卡片 1: 总体战绩与胜率 (纯本地) -->
-        <div class="bg-[#121721] border border-slate-800/80 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div class="aurora-glass aurora-glass-hover rounded-2xl p-5 flex flex-col justify-between">
           <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">总体战绩与胜率</span>
-            <span class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xs">🏆</span>
+            <span class="text-xs text-slate-300 font-medium">总体战绩与胜率</span>
+            <span class="w-7 h-7 rounded-lg bg-emerald-400/15 border border-emerald-400/30 text-emerald-300 flex items-center justify-center text-xs">🏆</span>
           </div>
           <div class="flex items-center justify-between my-3">
             <div>
               <div class="text-3xl font-black text-white font-mono tracking-tight">{{ summary?.winRate || 0 }}%</div>
               <div class="text-xs text-slate-400 mt-1 font-mono">
                 总计 {{ totalGamesInDb }} 场 
-                (<span class="text-emerald-400 font-semibold">{{ summary?.totalWins || 0 }} 胜</span> / 
+                (<span class="text-emerald-300 font-semibold">{{ summary?.totalWins || 0 }} 胜</span> / 
                 <span class="text-rose-400 font-semibold">{{ totalGamesInDb - (summary?.totalWins || 0) }} 负</span>)
               </div>
             </div>
             <!-- 环形 SVG 动态反映本地胜率 -->
             <div class="relative w-14 h-14 flex items-center justify-center">
-              <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <path class="text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <svg class="w-full h-full transform -rotate-90 drop-shadow-[0_0_6px_rgba(52,211,153,0.35)]" viewBox="0 0 36 36">
+                <path class="text-white/10" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
                 <path class="text-emerald-400 stroke-current" stroke-width="3.5" :stroke-dasharray="`${summary?.winRate || 0}, 100`" stroke-linecap="round" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
               </svg>
             </div>
           </div>
-          <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs font-mono">
+          <div class="pt-2 border-t border-white/10 flex items-center justify-between text-xs font-mono">
             <span class="text-slate-400">本地已解析局数:</span>
-            <span class="text-emerald-400 font-bold">{{ totalGamesInDb }} 局</span>
+            <span class="text-emerald-300 font-bold">{{ totalGamesInDb }} 局</span>
           </div>
         </div>
 
         <!-- 卡片 2: 对线期统治力 (纯本地) -->
-        <div class="bg-[#121721] border border-slate-800/80 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div class="aurora-glass aurora-glass-hover rounded-2xl p-5 flex flex-col justify-between">
           <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">对线期统治力</span>
-            <span class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xs">⚔️</span>
+            <span class="text-xs text-slate-300 font-medium">对线期统治力</span>
+            <span class="w-7 h-7 rounded-lg bg-emerald-400/15 border border-emerald-400/30 text-emerald-300 flex items-center justify-center text-xs">⚔️</span>
           </div>
           <div class="my-2">
             <div class="flex items-baseline gap-2">
-              <span class="text-3xl font-black text-emerald-400 font-mono">{{ summary?.laneWinRate || 0 }}%</span>
+              <span class="text-3xl font-black text-emerald-300 font-mono">{{ summary?.laneWinRate || 0 }}%</span>
               <span class="text-xs text-slate-400">线优率</span>
             </div>
             <!-- 三色分段真实柱条 -->
-            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden flex mt-2.5 gap-0.5">
+            <div class="w-full bg-white/10 h-2.5 rounded-full overflow-hidden flex mt-2.5 gap-0.5">
               <div class="bg-emerald-400 h-full transition-all" :style="{ width: (summary?.laneWinRate || 0) + '%' }"></div>
               <div class="bg-amber-400 h-full transition-all" :style="{ width: Math.max(0, 100 - (summary?.laneWinRate || 0) - laneLossRate) + '%' }"></div>
               <div class="bg-rose-500 h-full transition-all" :style="{ width: laneLossRate + '%' }"></div>
             </div>
-            <div class="flex justify-between items-center text-[10px] text-slate-400 mt-2 font-mono">
+            <div class="flex justify-between items-center text-[10px] text-slate-300 mt-2 font-mono">
               <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>线优 {{ summary?.laneWinRate || 0 }}%</span>
               <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>均势 {{ Math.max(0, 100 - (summary?.laneWinRate || 0) - laneLossRate).toFixed(1) }}%</span>
               <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>线劣 {{ laneLossRate }}%</span>
             </div>
           </div>
-          <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs font-mono">
+          <div class="pt-2 border-t border-white/10 flex items-center justify-between text-xs font-mono">
             <span class="text-slate-400">对线评估标准:</span>
-            <span class="text-slate-300">效率 ≥ 60% 为优</span>
+            <span class="text-slate-200">效率 ≥ 60% 为优</span>
           </div>
         </div>
 
         <!-- 卡片 3: 场均 KDA / 经济表现 (纯本地) -->
-        <div class="bg-[#121721] border border-slate-800/80 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div class="aurora-glass aurora-glass-hover rounded-2xl p-5 flex flex-col justify-between">
           <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">场均 KDA / 经济表现</span>
-            <span class="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-xs">⚡</span>
+            <span class="text-xs text-slate-300 font-medium">场均 KDA / 经济表现</span>
+            <span class="w-7 h-7 rounded-lg bg-cyan-400/15 border border-cyan-400/30 text-cyan-300 flex items-center justify-center text-xs">⚡</span>
           </div>
           <div class="my-2">
             <div class="flex items-baseline gap-2">
@@ -156,53 +169,53 @@
               <span class="text-xs text-slate-400 font-mono">KDA</span>
             </div>
             <div class="text-xs font-mono mt-1 text-slate-400">
-              <span class="text-emerald-400 font-bold">{{ summary?.avgKills || 0 }}</span> / 
+              <span class="text-emerald-300 font-bold">{{ summary?.avgKills || 0 }}</span> / 
               <span class="text-rose-400 font-bold">{{ summary?.avgDeaths || 0 }}</span> / 
-              <span class="text-cyan-400 font-bold">{{ summary?.avgAssists || 0 }}</span>
+              <span class="text-cyan-300 font-bold">{{ summary?.avgAssists || 0 }}</span>
             </div>
           </div>
-          <div class="pt-2 border-t border-slate-800/60 grid grid-cols-2 text-xs font-mono">
+          <div class="pt-2 border-t border-white/10 grid grid-cols-2 text-xs font-mono">
             <div>
-              <span class="text-slate-500 text-[10px] block">分均经济 (GPM)</span>
-              <span class="text-amber-400 font-bold">{{ summary?.avgGpm || 0 }}</span>
+              <span class="text-slate-400 text-[10px] block">分均经济 (GPM)</span>
+              <span class="text-amber-300 font-bold">{{ summary?.avgGpm || 0 }}</span>
             </div>
             <div class="text-right">
-              <span class="text-slate-500 text-[10px] block">分均经验 (XPM)</span>
-              <span class="text-slate-200 font-bold">{{ summary?.avgXpm || 0 }}</span>
+              <span class="text-slate-400 text-[10px] block">分均经验 (XPM)</span>
+              <span class="text-cyan-200 font-bold">{{ summary?.avgXpm || 0 }}</span>
             </div>
           </div>
         </div>
 
         <!-- 卡片 4: 阵营对局胜率分布 (纯本地数据真实渲染) -->
-        <div class="bg-[#121721] border border-slate-800/80 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div class="aurora-glass aurora-glass-hover rounded-2xl p-5 flex flex-col justify-between">
           <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">阵营对局胜率分布</span>
-            <span class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-xs">⚖️</span>
+            <span class="text-xs text-slate-300 font-medium">阵营对局胜率分布</span>
+            <span class="w-7 h-7 rounded-lg bg-indigo-400/15 border border-indigo-400/30 text-indigo-300 flex items-center justify-center text-xs">⚖️</span>
           </div>
           <div class="space-y-3 my-2 text-xs font-mono">
             <div>
-              <div class="flex justify-between text-slate-300 mb-1">
+              <div class="flex justify-between text-slate-200 mb-1">
                 <span>天辉 / 蓝方 ({{ radiantData.games }}场)</span>
-                <span class="text-emerald-400 font-bold">{{ radiantData.winRate }}%</span>
+                <span class="text-emerald-300 font-bold">{{ radiantData.winRate }}%</span>
               </div>
-              <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div class="bg-emerald-400 h-full rounded-full transition-all" :style="{ width: radiantData.winRate + '%' }"></div>
+              <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r from-emerald-500 to-teal-300 h-full rounded-full transition-all" :style="{ width: radiantData.winRate + '%' }"></div>
               </div>
             </div>
             <div>
-              <div class="flex justify-between text-slate-300 mb-1">
-                <span>夜宴 / 红方 ({{ direData.games }}场)</span>
+              <div class="flex justify-between text-slate-200 mb-1">
+                <span>夜魇 / 红方 ({{ direData.games }}场)</span>
                 <span class="text-rose-400 font-bold">{{ direData.winRate }}%</span>
               </div>
-              <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div class="bg-rose-400 h-full rounded-full transition-all" :style="{ width: direData.winRate + '%' }"></div>
+              <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r from-rose-500 to-pink-400 h-full rounded-full transition-all" :style="{ width: direData.winRate + '%' }"></div>
               </div>
             </div>
           </div>
-          <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+          <div class="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-mono">
             <span>净胜场差:</span>
-            <span :class="radiantData.wins >= direData.wins ? 'text-emerald-400' : 'text-rose-400'">
-              {{ radiantData.wins >= direData.wins ? `天辉多赢 ${radiantData.wins - direData.wins} 场` : `夜宴多赢 ${direData.wins - radiantData.wins} 场` }}
+            <span :class="radiantData.wins >= direData.wins ? 'text-emerald-300' : 'text-rose-400'">
+              {{ radiantData.wins >= direData.wins ? `天辉多赢 ${radiantData.wins - direData.wins} 场` : `夜魇多赢 ${direData.wins - radiantData.wins} 场` }}
             </span>
           </div>
         </div>
@@ -212,14 +225,14 @@
       <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         <!-- 左列：各位置分布与胜率表现 (纯本地数据) -->
-        <div class="lg:col-span-7 bg-[#121721] border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-          <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
+        <div class="lg:col-span-7 aurora-glass rounded-2xl p-6">
+          <div class="flex items-center justify-between pb-4 border-b border-white/10">
             <div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2.5">
                 <span class="text-base font-bold text-white flex items-center gap-2">
-                  <span class="text-cyan-400 text-sm">⊞</span> 各位置分布与胜率表现
+                  <span class="text-cyan-300 text-sm">⊞</span> 各位置分布与胜率表现
                 </span>
-                <span class="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50">
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-400/15 text-cyan-200 border border-cyan-400/30 backdrop-blur-md">
                   主修: {{ mainPositionText }}
                 </span>
               </div>
@@ -228,42 +241,42 @@
           </div>
 
           <!-- 位置卡片列表 -->
-          <div class="space-y-4 mt-5">
+          <div class="space-y-3.5 mt-5">
             <div 
               v-for="pos in computedPositionList" 
               :key="pos.posId" 
-              class="p-3.5 rounded-xl bg-[#0c1017]/80 border border-slate-800 hover:border-slate-700 transition-all"
+              class="p-3.5 rounded-xl aurora-subcard hover:border-cyan-400/30 transition-all"
             >
               <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2 mb-2 font-mono">
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full" :class="pos.badgeColor"></span>
                   <span class="font-bold text-white">{{ pos.title }}</span>
-                  <span v-if="pos.isMain" class="px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/20 text-cyan-400">本命位置</span>
+                  <span v-if="pos.isMain" class="px-2 py-0.5 rounded-full text-[10px] bg-cyan-400/20 text-cyan-200 border border-cyan-400/30">本命位置</span>
                 </div>
-                <div class="flex items-center gap-4 text-slate-400">
+                <div class="flex items-center gap-4 text-slate-300">
                   <span>场次: <strong class="text-white">{{ pos.games }}</strong> ({{ pos.percent }}%)</span>
-                  <span>线优率: <strong class="text-emerald-400">{{ pos.laneWinRate }}%</strong></span>
-                  <span>胜率: <strong :class="pos.winRate >= 50 ? 'text-emerald-400' : 'text-rose-400'">{{ pos.winRate }}%</strong></span>
+                  <span>线优率: <strong class="text-emerald-300">{{ pos.laneWinRate }}%</strong></span>
+                  <span>胜率: <strong :class="pos.winRate >= 50 ? 'text-emerald-300' : 'text-rose-400'">{{ pos.winRate }}%</strong></span>
                 </div>
               </div>
 
               <!-- 进度条 -->
-              <div class="grid grid-cols-2 gap-3 text-[10px] font-mono text-slate-500">
+              <div class="grid grid-cols-2 gap-3 text-[10px] font-mono text-slate-400">
                 <div>
                   <div class="flex justify-between mb-1">
                     <span>选位占比</span>
                     <span>{{ pos.percent }}%</span>
                   </div>
-                  <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
                     <div class="h-full rounded-full transition-all" :class="pos.barColor" :style="{ width: pos.percent + '%' }"></div>
                   </div>
                 </div>
                 <div>
                   <div class="flex justify-between mb-1">
                     <span>胜率指标</span>
-                    <span :class="pos.winRate >= 50 ? 'text-emerald-400' : 'text-rose-400'">{{ pos.winRate }}%</span>
+                    <span :class="pos.winRate >= 50 ? 'text-emerald-300' : 'text-rose-400'">{{ pos.winRate }}%</span>
                   </div>
-                  <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
                     <div class="h-full rounded-full transition-all" :class="pos.winRate >= 50 ? 'bg-emerald-400' : 'bg-rose-500'" :style="{ width: pos.winRate + '%' }"></div>
                   </div>
                 </div>
@@ -277,12 +290,12 @@
         </div>
 
         <!-- 右列：排位组队胜率对比 (纯本地数据) -->
-        <div class="lg:col-span-5 bg-[#121721] border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+        <div class="lg:col-span-5 aurora-glass rounded-2xl p-6 flex flex-col justify-between">
           <div>
-            <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
+            <div class="flex items-center justify-between pb-4 border-b border-white/10">
               <div>
                 <span class="text-base font-bold text-white flex items-center gap-2">
-                  <span class="text-indigo-400 text-sm">👥</span> 排位组队胜率对比
+                  <span class="text-indigo-300 text-sm">👥</span> 排位组队胜率对比
                 </span>
                 <p class="text-xs text-slate-400 mt-1">单排孤勇 vs 车队开黑本地胜率对比</p>
               </div>
@@ -291,15 +304,15 @@
             <!-- 组队各模式胜率 -->
             <div class="space-y-4 mt-5">
               <!-- 1. 单排 (Solo) -->
-              <div class="p-3.5 rounded-xl bg-[#0c1017]/80 border border-slate-800">
+              <div class="p-3.5 rounded-xl aurora-subcard">
                 <div class="flex justify-between items-center text-xs font-mono mb-2">
                   <span class="text-white font-bold flex items-center gap-1.5">
                     👤 单排 (Solo Queue)
                   </span>
-                  <span class="text-slate-400">{{ soloPartyData.games }} 场 | <strong class="text-cyan-400">{{ soloPartyData.winRate }}%</strong></span>
+                  <span class="text-slate-300">{{ soloPartyData.games }} 场 | <strong class="text-cyan-300">{{ soloPartyData.winRate }}%</strong></span>
                 </div>
-                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div class="bg-cyan-500 h-full rounded-full transition-all" :style="{ width: soloPartyData.winRate + '%' }"></div>
+                <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                  <div class="bg-gradient-to-r from-cyan-500 to-sky-300 h-full rounded-full transition-all" :style="{ width: soloPartyData.winRate + '%' }"></div>
                 </div>
                 <div class="flex justify-between text-[11px] text-slate-400 mt-2 font-mono">
                   <span>单排 MVP 比例: {{ soloPartyData.mvpRate }}%</span>
@@ -308,119 +321,109 @@
               </div>
 
               <!-- 2. 双排 / 三排 (Duo / Trio) -->
-              <div class="p-3.5 rounded-xl bg-[#0c1017]/80 border border-slate-800">
+              <div class="p-3.5 rounded-xl aurora-subcard">
                 <div class="flex justify-between items-center text-xs font-mono mb-2">
                   <span class="text-white font-bold flex items-center gap-1.5">
                     👥 双排 / 三排 (Duo / Trio)
                   </span>
-                  <span class="text-slate-400">{{ duoTrioData.games }} 场 | <strong class="text-purple-400">{{ duoTrioData.winRate }}%</strong></span>
+                  <span class="text-slate-300">{{ duoTrioData.games }} 场 | <strong class="text-purple-300">{{ duoTrioData.winRate }}%</strong></span>
                 </div>
-                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div class="bg-purple-500 h-full rounded-full transition-all" :style="{ width: duoTrioData.winRate + '%' }"></div>
+                <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                  <div class="bg-gradient-to-r from-purple-500 to-fuchsia-400 h-full rounded-full transition-all" :style="{ width: duoTrioData.winRate + '%' }"></div>
                 </div>
                 <div class="flex justify-between text-[11px] text-slate-400 mt-2 font-mono">
                   <span>双三排 MVP: {{ duoTrioData.mvpRate }}%</span>
-                  <span class="text-purple-400">好友配合默契</span>
+                  <span class="text-purple-300">好友配合默契</span>
                 </div>
               </div>
 
               <!-- 3. 五排车队 (5-Stack) -->
-              <div class="p-3.5 rounded-xl bg-[#0c1017]/80 border border-slate-800">
+              <div class="p-3.5 rounded-xl aurora-subcard">
                 <div class="flex justify-between items-center text-xs font-mono mb-2">
                   <span class="text-white font-bold flex items-center gap-1.5">
                     🛡️ 五排车队 (5-Stack)
                   </span>
-                  <span class="text-slate-400">{{ stack5Data.games }} 场 | <strong class="text-emerald-400">{{ stack5Data.winRate }}%</strong></span>
+                  <span class="text-slate-300">{{ stack5Data.games }} 场 | <strong class="text-emerald-300">{{ stack5Data.winRate }}%</strong></span>
                 </div>
-                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div class="bg-emerald-400 h-full rounded-full transition-all" :style="{ width: stack5Data.winRate + '%' }"></div>
+                <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                  <div class="bg-gradient-to-r from-emerald-500 to-teal-300 h-full rounded-full transition-all" :style="{ width: stack5Data.winRate + '%' }"></div>
                 </div>
                 <div class="flex justify-between text-[11px] text-slate-400 mt-2 font-mono">
-                  <span class="text-emerald-400">团队终极执行力</span>
-                  <span class="text-amber-400 font-semibold">{{ stack5Data.games > 0 ? '车队数据已录入' : '暂无五排记录' }}</span>
+                  <span class="text-emerald-300">团队终极执行力</span>
+                  <span class="text-amber-300 font-semibold">{{ stack5Data.games > 0 ? '车队数据已录入' : '暂无五排记录' }}</span>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500 font-mono text-center">
-            基于本地数据库比赛 party_size 字段真实聚类
           </div>
         </div>
       </section>
 
       <!-- 4. 紧凑战绩流水明细 (左) + 常用英雄 Top 10 (右) -->
-      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         <!-- 左列：紧凑版平铺本地高精度对局流水 -->
-        <div class="lg:col-span-7 bg-[#121721] border border-slate-800/80 rounded-2xl p-5 shadow-xl">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800/80">
+        <div class="lg:col-span-7 aurora-glass rounded-2xl p-5 flex flex-col">
+          <div class="flex items-center justify-between h-8 pb-3 border-b border-white/10">
             <div class="flex items-center gap-2.5">
               <span class="text-sm font-bold text-white flex items-center gap-1.5">
-                <span class="text-cyan-400">⚡</span> 本地高精度对局流水
+                <span class="text-cyan-300">⚡</span> 本地高精度对局流水
               </span>
-              <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/10 text-slate-300 font-mono">
                 近 {{ recentMatches.length }} 场
               </span>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center">
               <a 
                 :href="'/player/' + currentAccountId + '/history'" 
                 target="_blank" 
-                class="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 group transition-colors"
+                class="text-xs text-cyan-300 hover:text-cyan-200 transition-colors font-semibold"
               >
                 查看全部战绩
-                <span class="group-hover:translate-x-0.5 transition-transform">→</span>
               </a>
-              <button @click="showRecentTable = !showRecentTable" class="text-xs text-slate-400 hover:text-slate-300">
-                {{ showRecentTable ? '折叠' : '展开' }}
-              </button>
             </div>
           </div>
 
-          <div v-show="showRecentTable" class="mt-2.5 overflow-x-auto">
+          <div class="mt-2.5 overflow-x-auto flex-1">
             <table class="w-full text-left text-[11px] font-mono">
-              <thead class="bg-[#0b0e14] text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th class="py-1.5 px-2">对局ID</th>
-                  <th class="py-1.5 px-2">英雄</th>
-                  <th class="py-1.5 px-2 text-center">结果</th>
-                  <th class="py-1.5 px-2">K/D/A</th>
-                  <th class="py-1.5 px-2 text-center">对线</th>
-                  <th class="py-1.5 px-2 text-right">GPM/XPM</th>
+              <thead class="bg-[#060a15]/70 text-slate-400 border-b border-white/10">
+                <tr class="h-9">
+                  <th class="px-2 hidden sm:table-cell">对局ID</th>
+                  <th class="px-2">英雄</th>
+                  <th class="px-2 text-center">结果</th>
+                  <th class="px-2">K/D/A</th>
+                  <th class="px-2 text-center">对线</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-800/50">
+              <tbody class="divide-y divide-white/[0.06]">
                 <tr
                   v-for="m in recentMatches"
                   :key="m.matchId"
-                  class="hover:bg-[#151c2a] cursor-pointer group transition-colors"
+                  class="h-11 hover:bg-cyan-400/[0.07] cursor-pointer group transition-colors"
                   @click="openMatchDetail(m.matchId)"
                 >
-                  <td class="py-1.5 px-2 text-slate-500 group-hover:text-cyan-400 transition-colors">{{ m.matchId }}</td>
-                  <td class="py-1.5 px-2 font-bold text-white">
+                  <td class="px-2 text-slate-400 group-hover:text-cyan-300 transition-colors hidden sm:table-cell">{{ m.matchId }}</td>
+                  <td class="px-2 font-bold text-white">
                     <div class="flex items-center gap-1.5">
-                      <img :src="getHeroAvatar(m.heroId)" class="w-6 h-3.5 rounded object-cover shrink-0" @error="handleImgError" />
-                      <span class="truncate max-w-[88px]">{{ getHeroName(m.heroId) }}</span>
+                      <img :src="getHeroAvatar(m.heroId)" class="w-6 h-3.5 rounded object-cover shrink-0 border border-white/15" @error="handleImgError" />
+                      <span class="truncate max-w-[78px] sm:max-w-[88px]">{{ getHeroName(m.heroId) }}</span>
                     </div>
                   </td>
-                  <td class="py-1.5 px-2 text-center">
+                  <td class="px-2 text-center">
                     <span
-                      :class="m.win ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'"
-                      class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                      :class="m.win ? 'text-emerald-300 bg-emerald-500/15 border-emerald-400/30' : 'text-rose-300 bg-rose-500/15 border-rose-400/30'"
+                      class="px-1.5 py-0.5 rounded border text-[10px] font-bold"
                     >
                       {{ m.win ? '胜' : '负' }}
                     </span>
                   </td>
-                  <td class="py-1.5 px-2 text-slate-200">{{ m.kills }}/{{ m.deaths }}/{{ m.assists }}</td>
-                  <td class="py-1.5 px-2 text-center">
-                    <span :class="m.laneResult === 1 ? 'text-emerald-400' : m.laneResult === 3 ? 'text-rose-400' : 'text-amber-400'">
+                  <td class="px-2 text-slate-200 whitespace-nowrap">{{ m.kills }}/{{ m.deaths }}/{{ m.assists }}</td>
+                  <td class="px-2 text-center whitespace-nowrap">
+                    <span :class="m.laneResult === 1 ? 'text-emerald-300' : m.laneResult === 3 ? 'text-rose-400' : 'text-amber-300'">
                       {{ m.laneResult === 1 ? '线优' : m.laneResult === 3 ? '线劣' : '均势' }}
                     </span>
                   </td>
-                  <td class="py-1.5 px-2 text-right text-amber-400">{{ m.goldPerMin }}/{{ m.xpPerMin }}</td>
                 </tr>
                 <tr v-if="recentMatches.length === 0">
-                  <td colspan="6" class="py-6 text-center text-slate-500">本地数据库暂无已解析比赛</td>
+                  <td colspan="5" class="py-6 text-center text-slate-500">本地数据库暂无已解析比赛</td>
                 </tr>
               </tbody>
             </table>
@@ -428,65 +431,65 @@
         </div>
 
         <!-- 右列：常用英雄 Top 10（按使用场次从高到低排序，显示场次与胜率，支持展开全部英雄记录） -->
-        <div class="lg:col-span-5 bg-[#121721] border border-slate-800/80 rounded-2xl p-5 shadow-xl">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800/80">
+        <div class="lg:col-span-5 aurora-glass rounded-2xl p-5 flex flex-col">
+          <div class="flex items-center justify-between h-8 pb-3 border-b border-white/10">
             <div class="flex items-center gap-2">
               <span class="text-sm font-bold text-white flex items-center gap-1.5">
-                <span class="text-amber-400">🔥</span> 常用英雄池 (Top 10)
+                <span class="text-amber-300">🔥</span> 常用英雄池 (Top 10)
               </span>
-              <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/10 text-slate-300 font-mono">
                 共使用 {{ sortedHeroes.length }} 个
               </span>
             </div>
             <button
               v-if="sortedHeroes.length > 0"
               @click="toggleAllHeroes"
-              class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1 transition-colors"
+              class="text-xs text-cyan-300 hover:text-cyan-200 font-semibold flex items-center gap-1 transition-colors"
             >
               <span>{{ showAllHeroes ? '收起全部英雄' : `展开全部 (${sortedHeroes.length})` }}</span>
               <span>{{ showAllHeroes ? '↑' : '↓' }}</span>
             </button>
           </div>
 
-          <div class="mt-2.5 overflow-x-auto">
+          <div class="mt-2.5 overflow-x-auto flex-1">
             <table class="w-full text-left text-[11px] font-mono">
-              <thead class="bg-[#0b0e14] text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th class="py-1.5 px-2">英雄</th>
-                  <th class="py-1.5 px-2 text-center">使用场次</th>
-                  <th class="py-1.5 px-2 text-right">胜率</th>
+              <thead class="bg-[#060a15]/70 text-slate-400 border-b border-white/10">
+                <tr class="h-9">
+                  <th class="px-2">英雄</th>
+                  <th class="px-2 text-center">使用场次</th>
+                  <th class="px-2 text-right">胜率</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-800/50">
+              <tbody class="divide-y divide-white/[0.06]">
                 <tr
                   v-for="(h, idx) in top10Heroes"
                   :key="h.heroId"
-                  class="hover:bg-[#151c2a] transition-colors"
+                  class="h-11 hover:bg-cyan-400/[0.07] transition-colors"
                 >
-                  <td class="py-1.5 px-2">
+                  <td class="px-2">
                     <div class="flex items-center gap-2">
-                      <span class="w-4 text-[10px] text-slate-500 text-right">{{ idx + 1 }}</span>
-                      <img :src="getHeroAvatar(h.heroId)" class="w-6 h-3.5 rounded object-cover shrink-0" @error="handleImgError" />
+                      <span class="w-4 text-[10px] text-slate-400 text-right">{{ idx + 1 }}</span>
+                      <img :src="getHeroAvatar(h.heroId)" class="w-6 h-3.5 rounded object-cover shrink-0 border border-white/15" @error="handleImgError" />
                       <span class="font-bold text-white truncate max-w-[95px]">{{ getHeroName(h.heroId) }}</span>
                     </div>
                   </td>
-                  <td class="py-1.5 px-2 text-center">
-                    <div class="flex flex-col items-center">
-                      <span class="text-white font-bold">{{ h.matches }} 场</span>
-                      <div class="w-16 bg-slate-800 h-1 rounded-full overflow-hidden mt-0.5">
+                  <td class="px-2 text-center">
+                    <div class="flex flex-col items-center justify-center">
+                      <span class="text-white font-bold leading-tight">{{ h.matches }} 场</span>
+                      <div class="w-16 bg-white/10 h-1 rounded-full overflow-hidden mt-1">
                         <div
-                          class="bg-cyan-400 h-full rounded-full"
+                          class="bg-cyan-300 h-full rounded-full"
                           :style="{ width: Math.min(100, (h.matches / maxHeroMatches) * 100) + '%' }"
                         ></div>
                       </div>
                     </div>
                   </td>
-                  <td class="py-1.5 px-2 text-right">
-                    <div class="inline-flex flex-col items-end">
-                      <span :class="Number(h.winRate) >= 50 ? 'text-emerald-400' : 'text-rose-400'" class="font-bold">
+                  <td class="px-2 text-right">
+                    <div class="inline-flex flex-col items-end justify-center">
+                      <span :class="Number(h.winRate) >= 50 ? 'text-emerald-300' : 'text-rose-400'" class="font-bold leading-tight">
                         {{ h.winRate }}%
                       </span>
-                      <div class="w-16 bg-slate-800 h-1 rounded-full overflow-hidden mt-0.5">
+                      <div class="w-16 bg-white/10 h-1 rounded-full overflow-hidden mt-1">
                         <div
                           :class="Number(h.winRate) >= 50 ? 'bg-emerald-400' : 'bg-rose-500'"
                           class="h-full rounded-full"
@@ -509,15 +512,15 @@
       <section
         v-if="showAllHeroes"
         ref="allHeroesSectionRef"
-        class="bg-[#121721] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl transition-all"
+        class="aurora-glass border border-cyan-400/35 rounded-2xl p-6 transition-all"
       >
-        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
             <div class="flex items-center gap-2.5">
               <span class="text-base font-bold text-white flex items-center gap-2">
-                <span class="text-amber-400">📊</span> 全部使用英雄深度战绩档案
+                <span class="text-amber-300">📊</span> 全部使用英雄深度战绩档案
               </span>
-              <span class="text-xs px-2.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50 font-mono">
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-400/15 text-cyan-200 border border-cyan-400/30 font-mono">
                 共 {{ sortedHeroes.length }} 个英雄 · 按场次从高到低排序
               </span>
             </div>
@@ -527,15 +530,77 @@
           </div>
           <button
             @click="showAllHeroes = false"
-            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+            class="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-semibold transition-colors"
           >
             ✕ 收起列表
           </button>
         </div>
 
-        <div class="mt-4 overflow-x-auto">
+        <!-- 移动端专属：全量英雄战绩卡片流 (md:hidden) -->
+        <div class="mt-4 space-y-3 md:hidden font-mono text-xs">
+          <div
+            v-for="(h, idx) in sortedHeroes"
+            :key="'m-hero-' + h.heroId"
+            class="aurora-subcard rounded-xl p-3.5 space-y-2.5"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-[10px] text-slate-400 w-4">#{{ idx + 1 }}</span>
+                <img :src="getHeroAvatar(h.heroId)" class="w-9 h-5 rounded border border-white/15 object-cover shrink-0" @error="handleImgError" />
+                <span class="font-bold text-white truncate">{{ getHeroName(h.heroId) }}</span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-white font-bold">{{ h.matches }}场</span>
+                <span
+                  :class="Number(h.winRate) >= 50 ? 'text-emerald-300 bg-emerald-500/15 border-emerald-400/30' : 'text-rose-300 bg-rose-500/15 border-rose-400/30'"
+                  class="px-2 py-0.5 rounded border text-[11px] font-bold"
+                >
+                  {{ h.winRate }}%
+                </span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-[11px] bg-white/[0.03] rounded-lg p-2">
+              <div>
+                <span class="text-slate-400">天辉: </span>
+                <template v-if="Number(h.radiantMatches || 0) > 0">
+                  <strong :class="Number(h.radiantWinRate) >= 50 ? 'text-emerald-300' : 'text-rose-400'">{{ h.radiantWinRate }}%</strong>
+                  <span class="text-[10px] text-slate-500 ml-0.5">({{ h.radiantWins || 0 }}/{{ h.radiantMatches }})</span>
+                </template>
+                <span v-else class="text-slate-600">-</span>
+              </div>
+              <div class="text-right">
+                <span class="text-slate-400">夜魇: </span>
+                <template v-if="Number(h.direMatches || 0) > 0">
+                  <strong :class="Number(h.direWinRate) >= 50 ? 'text-emerald-300' : 'text-rose-400'">{{ h.direWinRate }}%</strong>
+                  <span class="text-[10px] text-slate-500 ml-0.5">({{ h.direWins || 0 }}/{{ h.direMatches }})</span>
+                </template>
+                <span v-else class="text-slate-600">-</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden flex gap-0.5 mb-1">
+                <div class="bg-emerald-400 h-full" :style="{ width: getHeroLaneDist(h).winPct + '%' }"></div>
+                <div class="bg-amber-400 h-full" :style="{ width: getHeroLaneDist(h).evenPct + '%' }"></div>
+                <div class="bg-rose-500 h-full" :style="{ width: getHeroLaneDist(h).lossPct + '%' }"></div>
+              </div>
+              <div class="flex justify-between items-center text-[10px] text-slate-400">
+                <span>
+                  <span class="text-emerald-300">优{{ getHeroLaneDist(h).winPct }}%</span> ·
+                  <span class="text-amber-300">均{{ getHeroLaneDist(h).evenPct }}%</span> ·
+                  <span class="text-rose-400">劣{{ getHeroLaneDist(h).lossPct }}%</span>
+                </span>
+                <span class="text-slate-400">{{ formatMatchTime(h.lastPlayedTime) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 桌面端：全量英雄战绩宽表 (hidden md:block) -->
+        <div class="mt-4 overflow-x-auto hidden md:block">
           <table class="w-full text-left text-xs font-mono">
-            <thead class="bg-[#0b0e14] text-slate-400 border-b border-slate-800">
+            <thead class="bg-[#060a15]/70 text-slate-400 border-b border-white/10">
               <tr>
                 <th class="py-3 px-3">#</th>
                 <th class="py-3 px-3">英雄</th>
@@ -547,28 +612,28 @@
                 <th class="py-3 px-3 text-right">最近一场比赛时间</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-800/60">
+            <tbody class="divide-y divide-white/[0.06]">
               <tr
                 v-for="(h, idx) in sortedHeroes"
                 :key="h.heroId"
-                class="hover:bg-[#151c2a] transition-colors"
+                class="hover:bg-cyan-400/[0.07] transition-colors"
               >
-                <td class="py-2.5 px-3 text-slate-500">{{ idx + 1 }}</td>
+                <td class="py-2.5 px-3 text-slate-400">{{ idx + 1 }}</td>
                 <td class="py-2.5 px-3">
                   <div class="flex items-center gap-2.5">
-                    <img :src="getHeroAvatar(h.heroId)" class="w-8 h-5 rounded border border-slate-700 object-cover" @error="handleImgError" />
+                    <img :src="getHeroAvatar(h.heroId)" class="w-8 h-5 rounded border border-white/15 object-cover" @error="handleImgError" />
                     <span class="font-bold text-white">{{ getHeroName(h.heroId) }}</span>
                   </div>
                 </td>
                 <td class="py-2.5 px-3 text-center">
                   <span class="text-white font-bold">{{ h.matches }} 场</span>
                   <span class="text-[11px] text-slate-400 ml-1">
-                    (<span class="text-emerald-400">{{ h.wins ?? 0 }}W</span>/<span class="text-rose-400">{{ h.losses ?? (h.matches - (h.wins || 0)) }}L</span>)
+                    (<span class="text-emerald-300">{{ h.wins ?? 0 }}W</span>/<span class="text-rose-400">{{ h.losses ?? (h.matches - (h.wins || 0)) }}L</span>)
                   </span>
                 </td>
                 <td class="py-2.5 px-3 text-center">
                   <span
-                    :class="Number(h.winRate) >= 50 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20'"
+                    :class="Number(h.winRate) >= 50 ? 'text-emerald-300 bg-emerald-500/15 border-emerald-400/30' : 'text-rose-300 bg-rose-500/15 border-rose-400/30'"
                     class="px-2 py-0.5 rounded border font-bold"
                   >
                     {{ h.winRate }}%
@@ -576,31 +641,31 @@
                 </td>
                 <td class="py-2.5 px-3 text-center">
                   <template v-if="Number(h.radiantMatches || 0) > 0">
-                    <span :class="Number(h.radiantWinRate) >= 50 ? 'text-emerald-400' : 'text-rose-400'" class="font-bold">
+                    <span :class="Number(h.radiantWinRate) >= 50 ? 'text-emerald-300' : 'text-rose-400'" class="font-bold">
                       {{ h.radiantWinRate }}%
                     </span>
-                    <span class="text-[10px] text-slate-500 ml-1">({{ h.radiantWins || 0 }}/{{ h.radiantMatches }}场)</span>
+                    <span class="text-[10px] text-slate-400 ml-1">({{ h.radiantWins || 0 }}/{{ h.radiantMatches }}场)</span>
                   </template>
                   <span v-else class="text-slate-600">-</span>
                 </td>
                 <td class="py-2.5 px-3 text-center">
                   <template v-if="Number(h.direMatches || 0) > 0">
-                    <span :class="Number(h.direWinRate) >= 50 ? 'text-emerald-400' : 'text-rose-400'" class="font-bold">
+                    <span :class="Number(h.direWinRate) >= 50 ? 'text-emerald-300' : 'text-rose-400'" class="font-bold">
                       {{ h.direWinRate }}%
                     </span>
-                    <span class="text-[10px] text-slate-500 ml-1">({{ h.direWins || 0 }}/{{ h.direMatches }}场)</span>
+                    <span class="text-[10px] text-slate-400 ml-1">({{ h.direWins || 0 }}/{{ h.direMatches }}场)</span>
                   </template>
                   <span v-else class="text-slate-600">-</span>
                 </td>
                 <td class="py-2.5 px-4">
-                  <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex gap-0.5 mb-1">
+                  <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden flex gap-0.5 mb-1">
                     <div class="bg-emerald-400 h-full" :style="{ width: getHeroLaneDist(h).winPct + '%' }"></div>
                     <div class="bg-amber-400 h-full" :style="{ width: getHeroLaneDist(h).evenPct + '%' }"></div>
                     <div class="bg-rose-500 h-full" :style="{ width: getHeroLaneDist(h).lossPct + '%' }"></div>
                   </div>
                   <div class="flex justify-between text-[10px] text-slate-400">
-                    <span class="text-emerald-400">优 {{ getHeroLaneDist(h).winPct }}%({{ getHeroLaneDist(h).winCount }})</span>
-                    <span class="text-amber-400">均 {{ getHeroLaneDist(h).evenPct }}%({{ getHeroLaneDist(h).evenCount }})</span>
+                    <span class="text-emerald-300">优 {{ getHeroLaneDist(h).winPct }}%({{ getHeroLaneDist(h).winCount }})</span>
+                    <span class="text-amber-300">均 {{ getHeroLaneDist(h).evenPct }}%({{ getHeroLaneDist(h).evenCount }})</span>
                     <span class="text-rose-400">劣 {{ getHeroLaneDist(h).lossPct }}%({{ getHeroLaneDist(h).lossCount }})</span>
                   </div>
                 </td>
@@ -633,7 +698,6 @@ const props = defineProps<{
 
 const router = useRouter();
 const currentAccountId = ref(props.accountId || '182595756');
-const showRecentTable = ref(true);
 const showAllHeroes = ref(false);
 const allHeroesSectionRef = ref<HTMLElement | null>(null);
 
@@ -732,7 +796,7 @@ const laneLossRate = computed(() => {
   return Number((Math.max(0, 100 - winR) * 0.45).toFixed(1));
 });
 
-// 3. 阵营 (天辉 / 夜宴) 纯本地绑定
+// 3. 阵营 (天辉 / 夜魇) 纯本地绑定
 const radiantData = computed(() => {
   const r = rawFactions.value.find((f: any) => f.isRadiant === 1 || f.isRadiant === true);
   return {
@@ -754,7 +818,7 @@ const direData = computed(() => {
 // 4. 各位置分布 Pos 1 ~ 5 (纯本地绑定)
 const posMeta: Record<number, { title: string; badgeColor: string; barColor: string }> = {
   1: { title: 'Pos 1 优势路核心 (Carry)', badgeColor: 'bg-emerald-400', barColor: 'bg-emerald-400' },
-  2: { title: 'Pos 2 中单 (Mid)', badgeColor: 'bg-cyan-400', barColor: 'bg-cyan-500' },
+  2: { title: 'Pos 2 中单 (Mid)', badgeColor: 'bg-cyan-400', barColor: 'bg-cyan-400' },
   3: { title: 'Pos 3 劣势路抗压 (Offlane)', badgeColor: 'bg-amber-400', barColor: 'bg-amber-400' },
   4: { title: 'Pos 4 游走/副辅 (Soft Sup)', badgeColor: 'bg-purple-400', barColor: 'bg-purple-400' },
   5: { title: 'Pos 5 纯辅助 (Hard Sup)', badgeColor: 'bg-rose-400', barColor: 'bg-rose-400' }
